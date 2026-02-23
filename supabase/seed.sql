@@ -1,0 +1,1 @@
+-- Optional seed data (intentionally empty for now)
