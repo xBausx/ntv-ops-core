@@ -1,28 +1,94 @@
-# Angular specific
-/dist/
-/out-tsc/
-/tmp/
-/coverage/
-/e2e/test-output/
-/.angular/
+# ----------------------------------------
+# OS / Editor
+# ----------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Editor history
+.history/
+
+# ----------------------------------------
+# Node / Angular
+# ----------------------------------------
+node_modules/
+dist/
+out/
+out-tsc/
+tmp/
+.tmp/
+.tmp*/
 .angular/
-
-# Node modules and dependency files
-/node_modules/
-/package-lock.json
-/yarn.lock
-
-# Environment files
-/.env
-
-# Angular CLI and build artefacts
-/.angular-cli.json
-/.ng/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Logs
+.cache/
+bazel-out/
+coverage/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+*.tsbuildinfo
+
+# Angular/karma misc
+.sass-cache/
+connect.lock
+libpeerconnection.log
+testem.log
+typings/
+
+# Environment files (keep examples committed)
+.env
+.env.*
+!.env.example
+
+# Angular CLI envs (if used)
+src/environments/environment*.ts
+!src/environments/environment.example.ts
+
+# ----------------------------------------
+# Supabase (local dev)
+# ----------------------------------------
+.supabase/
+supabase/.temp/
+supabase/.branches/
+
+# ----------------------------------------
+# Deno / Edge Functions
+# ----------------------------------------
+deno.lock
+**/deno.lock
+**/.deno/
+**/.deno_dir/
+
+# ----------------------------------------
+# Worker / Docker / Artifacts
+# ----------------------------------------
+worker/node_modules/
+worker/dist/
+*.tgz
+*.zip
+
+# ----------------------------------------
+# Misc
+# ----------------------------------------
+*.sqlite
+*.db
+ssl/
