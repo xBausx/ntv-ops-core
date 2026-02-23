@@ -50,6 +50,7 @@ module.exports = {
                     300: '#999eaa',
                 },
                 'neutral-dark': {
+                    main: '#4064b4',
                     50: '#f0f2f9',
                     100: '#d9e0f0',
                     200: '#b3c1e1',
@@ -62,6 +63,7 @@ module.exports = {
                     900: '#030a11',
                 },
                 primary: {
+                    main: '#4064b4',
                     50: '#f0f2f9',
                     100: '#d9e0f0',
                     200: '#b3c1e1',
@@ -74,6 +76,7 @@ module.exports = {
                     900: '#030a11',
                 },
                 accent: {
+                    main: '#8dcb2c',
                     50: '#f7fcf0',
                     100: '#e8f5d1',
                     200: '#d1eba3',
@@ -91,6 +94,21 @@ module.exports = {
                     500: '#9ca3af', // gray-500
                 },
                 info: {
+                    main: '#095af3',
+                    50: '#f0f6ff',
+                    100: '#d1e7ff',
+                    200: '#a3cfff',
+                    300: '#75b7ff',
+                    400: '#479fff',
+                    500: '#095af3',
+                    600: '#0748c2',
+                    700: '#053691',
+                    800: '#032460',
+                    900: '#011230',
+                },
+                // Added "information" specifically for the pantry library
+                information: {
+                    main: '#095af3',
                     50: '#f0f6ff',
                     100: '#d1e7ff',
                     200: '#a3cfff',
@@ -104,6 +122,7 @@ module.exports = {
                 },
                 alert: '#26A69A',
                 success: {
+                    main: '#3adb30',
                     50: '#f0fdf4',
                     100: '#dcfce7',
                     200: '#bbf7d0',
@@ -116,6 +135,7 @@ module.exports = {
                     900: '#14532d',
                 },
                 warning: {
+                    main: '#ffa500',
                     50: '#fffbeb',
                     100: '#fef3c7',
                     200: '#fde68a',
@@ -128,6 +148,7 @@ module.exports = {
                     900: '#78350f',
                 },
                 danger: {
+                    main: '#e73535',
                     50: '#fef2f2',
                     100: '#fee2e2',
                     200: '#fecaca',
