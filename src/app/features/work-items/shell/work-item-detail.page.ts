@@ -8,8 +8,8 @@ import { map } from 'rxjs/operators';
   standalone: true,
   imports: [RouterLink, NgIf, AsyncPipe],
   template: `
-    <div class="min-h-screen bg-black text-white">
-      <div class="max-w-[1440px] mx-auto px-8 py-8">
+    <div class="min-h-screen bg-black text-white flex flex-col">
+      <div class="w-full max-w-none mx-auto px-6 xl:px-10 2xl:px-12 py-6 flex flex-1 flex-col min-h-0">
         <ng-container *ngIf="workId$ | async as workId">
           <div class="flex items-start justify-between gap-6">
             <div class="flex flex-col gap-2">
@@ -44,9 +44,9 @@ import { map } from 'rxjs/operators';
             </div>
           </div>
 
-          <div class="mt-8 grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div class="mt-6 flex flex-col xl:flex-row gap-6 flex-1 min-h-0">
             <!-- Summary -->
-            <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:col-span-2">
+            <div class="border border-white/10 bg-white/5 rounded-2xl p-6 flex flex-col flex-1 min-w-0 min-h-0">
               <div class="flex items-center justify-between gap-4">
                 <h2 class="text-base font-bold">Summary</h2>
                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-white/10">MVP</span>
@@ -73,7 +73,7 @@ import { map } from 'rxjs/operators';
             </div>
 
             <!-- Linked Players -->
-            <div class="border border-white/10 bg-white/5 rounded-2xl p-6">
+            <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:w-[360px] xl:shrink-0">
               <h2 class="text-base font-bold">Linked Players</h2>
 
               <div class="mt-4 rounded-xl border border-white/10 bg-black/30 p-4">

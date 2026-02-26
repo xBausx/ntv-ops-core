@@ -6,8 +6,8 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="min-h-screen bg-black text-white">
-      <div class="max-w-[1440px] mx-auto px-8 py-8">
+    <div class="min-h-screen bg-black text-white flex flex-col">
+      <div class="w-full max-w-none mx-auto px-6 xl:px-10 2xl:px-12 py-6 flex flex-1 flex-col min-h-0">
         <div class="flex items-start justify-between gap-6">
           <div class="flex flex-col gap-2">
             <div class="inline-flex items-center gap-3">
@@ -27,8 +27,8 @@ import { RouterLink } from '@angular/router';
           </a>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div class="border border-white/10 bg-white/5 rounded-2xl p-6">
+        <div class="mt-6 flex flex-col xl:flex-row gap-6 flex-1 min-h-0">
+          <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:w-[360px] xl:shrink-0">
             <h2 class="text-base font-bold">XLSX Import (MVP)</h2>
             <p class="mt-3 text-sm text-white/70">
               Next: upload XLSX → Edge Function parses → idempotent upserts into
@@ -40,7 +40,7 @@ import { RouterLink } from '@angular/router';
             </div>
           </div>
 
-          <div class="border border-white/10 bg-white/5 rounded-2xl p-6">
+          <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:w-[360px] xl:shrink-0">
             <h2 class="text-base font-bold">External References</h2>
             <p class="mt-3 text-sm text-white/70">
               Link/unlink Monday/HubSpot/Sheets references to players or work items (admin-only).
@@ -50,7 +50,7 @@ import { RouterLink } from '@angular/router';
             </div>
           </div>
 
-          <div class="border border-white/10 bg-white/5 rounded-2xl p-6">
+          <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:w-[360px] xl:shrink-0">
             <h2 class="text-base font-bold">Roles</h2>
             <p class="mt-3 text-sm text-white/70">
               Roles are stored in <span class="text-white">public.profiles</span>.

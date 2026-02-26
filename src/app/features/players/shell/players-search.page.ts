@@ -7,8 +7,8 @@ import { Input } from '@ntv360/component-pantry';
   standalone: true,
   imports: [RouterLink, Input],
   template: `
-    <div class="min-h-screen bg-black text-white">
-      <div class="max-w-[1440px] mx-auto px-8 py-8">
+    <div class="min-h-screen bg-black text-white flex flex-col">
+      <div class="w-full max-w-none mx-auto px-6 xl:px-10 2xl:px-12 py-6 flex flex-1 flex-col min-h-0">
         <div class="flex items-start justify-between gap-6">
           <div class="flex flex-col gap-2">
             <div class="inline-flex items-center gap-3">
@@ -29,9 +29,9 @@ import { Input } from '@ntv360/component-pantry';
           </a>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="mt-6 flex flex-col xl:flex-row gap-6 flex-1 min-h-0">
           <!-- Search box -->
-          <div class="border border-white/10 bg-white/5 rounded-2xl p-6">
+          <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:w-[360px] xl:shrink-0">
             <h2 class="text-base font-bold">Search</h2>
 
             <label class="mt-4 block text-xs uppercase tracking-[0.18em] text-white/60">
@@ -58,7 +58,7 @@ import { Input } from '@ntv360/component-pantry';
           </div>
 
           <!-- Results placeholder -->
-          <div class="border border-white/10 bg-white/5 rounded-2xl p-6 xl:col-span-2">
+          <div class="border border-white/10 bg-white/5 rounded-2xl p-6 flex flex-col flex-1 min-w-0 min-h-0">
             <div class="flex items-center justify-between gap-4">
               <h2 class="text-base font-bold">Results</h2>
               <span class="text-xs text-white/60">
