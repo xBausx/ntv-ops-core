@@ -3,8 +3,293 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design System Variables */
+:root {
+  /* Animation */
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 200ms;
+  --motion-duration-slow: 300ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Dark theme shadows */
+  --shadow-dark-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-dark-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-dark-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-dark-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
+/* Dark-first baseline to match NTV360 surfaces */
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
 body {
-    background: #dadada;
-    font-family: "Nunito", sans-serif;
-    font-optical-sizing: auto;
+  height: 100%;
+  margin: 0;
+  background: #050505;
+  color: #ffffff;
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.1);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+
+/* Base component styles */
+@layer components {
+  /* Modern card */
+  .card-modern {
+    @apply bg-white/[0.02] border border-white/10 rounded-2xl backdrop-blur-sm;
+    box-shadow: var(--shadow-dark-md), inset 0 1px 0 rgb(255 255 255 / 0.05);
+    transition: all var(--motion-duration-normal) var(--motion-ease);
+  }
+  
+  .card-modern:hover {
+    @apply border-white/20 bg-white/[0.04];
+    box-shadow: var(--shadow-dark-lg), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    transform: translateY(-1px);
+  }
+  
+  /* Modern input */
+  .input-modern {
+    @apply bg-white/[0.02] border border-white/10 rounded-xl px-4 py-3 text-sm;
+    @apply outline-none transition-all duration-200 ease-out;
+    @apply placeholder:text-white/40 focus:border-white/30 focus:bg-white/[0.04];
+    @apply focus:ring-2 focus:ring-white/10 focus:ring-offset-2 focus:ring-offset-neutral-950;
+  }
+  
+  /* Modern button */
+  .btn-modern {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5;
+    @apply text-sm font-semibold transition-all duration-200 ease-out;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-neutral-950;
+  }
+  
+  .btn-primary {
+    @apply bg-white text-black hover:bg-white/90 focus:ring-white/50;
+    box-shadow: var(--shadow-dark-sm);
+  }
+  
+  .btn-secondary {
+    @apply bg-white/10 text-white border border-white/20 hover:bg-white/15;
+    @apply hover:border-white/30 focus:ring-white/30;
+  }
+  
+  /* Status indicators */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-new { @apply bg-blue-500/20 text-blue-200 border border-blue-500/30; }
+  .status-in-progress { @apply bg-amber-500/20 text-amber-200 border border-amber-500/30; }
+  .status-blocked { @apply bg-red-500/20 text-red-200 border border-red-500/30; }
+  .status-verified { @apply bg-green-500/20 text-green-200 border border-green-500/30; }
+  .status-closed { @apply bg-gray-500/20 text-gray-300 border border-gray-500/30; }
+}
+
+/* Skeleton loader animation */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.05) 25%,
+    rgb(255 255 255 / 0.1) 50%,
+    rgb(255 255 255 / 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 2s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.02) 25%,
+    rgb(255 255 255 / 0.08) 50%,
+    rgb(255 255 255 / 0.02) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+/* -------------------------------------------------------------------------- */
+/* NTV Pantry dark overrides                                                   */
+/* (Pantry table + filter UI currently ships light-first hardcoded colors.)    */
+/* -------------------------------------------------------------------------- */
+
+html.dark {
+  /* Table (ntv-table) */
+  ntv-table {
+    .table-container {
+      background: transparent !important;
+    }
+
+    .table-wrapper {
+      /* Remove “double border” feel inside our outer card */
+      border: 0 !important;
+      background: rgb(255 255 255 / 0.02) !important;
+    }
+
+    .table {
+      background: transparent !important;
+    }
+
+    thead {
+      background: rgb(255 255 255 / 0.04) !important;
+    }
+
+    thead th {
+      color: rgb(255 255 255 / 0.70) !important;
+      border-color: rgb(255 255 255 / 0.08) !important;
+    }
+
+    tbody tr {
+      border-color: rgb(255 255 255 / 0.08) !important;
+    }
+
+    tbody tr:hover {
+      background: rgb(255 255 255 / 0.04) !important;
+    }
+
+    tbody td {
+      color: rgb(255 255 255 / 0.78) !important;
+      border-color: rgb(255 255 255 / 0.06) !important;
+    }
+
+    /* Loading overlay (this is what causes the “white flash” on refresh) */
+    .table__loading-overlay {
+      background-color: rgb(0 0 0 / 0.65) !important;
+      backdrop-filter: blur(6px) !important;
+    }
+
+    .table__loading-content {
+      background: #0b0b0b !important;
+      border-color: rgb(255 255 255 / 0.12) !important;
+      box-shadow: var(--shadow-dark-lg) !important;
+    }
+
+    .table__loading-message {
+      color: rgb(255 255 255 / 0.80) !important;
+    }
+
+    .table__loading-spinner {
+      border-color: rgb(255 255 255 / 0.10) !important;
+      border-top-color: rgb(255 255 255 / 0.65) !important;
+    }
+  }
+
+  /* Column filter popup (ntv-column-filter) */
+  .filter-popup-content {
+    background: #0b0b0b !important;
+    border: 1px solid rgb(255 255 255 / 0.12) !important;
+    border-radius: 14px !important;
+    padding: 12px !important;
+  }
+
+  .filter-popup-header {
+    border-bottom-color: rgb(255 255 255 / 0.12) !important;
+  }
+
+  .filter-popup-header span {
+    color: rgb(255 255 255 / 0.80) !important;
+  }
+
+  .filter-info {
+    color: rgb(255 255 255 / 0.55) !important;
+  }
+
+  .filter-popup-input,
+  .filter-popup-select {
+    background: rgb(255 255 255 / 0.04) !important;
+    border-color: rgb(255 255 255 / 0.12) !important;
+    color: rgb(255 255 255 / 0.85) !important;
+  }
+
+  .filter-popup-input::placeholder {
+    color: rgb(255 255 255 / 0.40) !important;
+  }
+
+  .sort-btn-popup {
+    background: rgb(255 255 255 / 0.06) !important;
+    border: 1px solid rgb(255 255 255 / 0.12) !important;
+    color: rgb(255 255 255 / 0.85) !important;
+  }
+
+  .sort-btn-popup:hover {
+    background: rgb(255 255 255 / 0.10) !important;
+  }
+
+  /* Clear Filter button -> icon-only “X” */
+  .clear-filter-btn {
+    position: relative !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    border-radius: 9999px !important;
+    background: rgb(255 255 255 / 0.06) !important;
+    border: 1px solid rgb(255 255 255 / 0.12) !important;
+    color: transparent !important; /* keep text for a11y, hide visually */
+  }
+
+  .clear-filter-btn:hover {
+    background: rgb(255 255 255 / 0.10) !important;
+  }
+
+  .clear-filter-btn::after {
+    content: '×';
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    line-height: 1;
+    color: rgb(255 255 255 / 0.85);
+  }
 }

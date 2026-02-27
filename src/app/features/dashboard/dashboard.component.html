@@ -1,71 +1,150 @@
-<h1>Dashboard</h1>
-<p>Welcome to your dashboard!</p>
+<div class="space-y-8">
+  <!-- Header Section -->
+  <div class="space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-violet-400 animate-pulse"></div>
+      <h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+        Operations Dashboard
+      </h1>
+    </div>
+    <p class="text-white/60 text-lg leading-relaxed max-w-2xl">
+      Welcome to NTV360 Ops Core. Monitor installations, track incidents, and manage your night operations from one unified interface.
+    </p>
+  </div>
 
-<div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- Card with buttons -->
-    <ntv-card variant="elevated" shadow="md" rounded="lg">
-        <div class="p-6">
-            <h2 class="text-xl font-bold mb-2">Welcome Card</h2>
-            <p class="text-gray-600 mb-4">This is a card component from component-pantry with elevated style.</p>
-            <div class="space-x-2">
-                <ntv-button 
-                    variant="primary" 
-                    size="md"
-                    (buttonClick)="onButtonClick($event)">
-                    Click Me!
-                </ntv-button>
-                <ntv-button 
-                    variant="success" 
-                    size="md"
-                    [config]="{ shadow: true, rounded: 'lg' }">
-                    Success Button
-                </ntv-button>
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+    @for (stat of quickStats(); track stat.label) {
+      <div class="card-modern p-6 group cursor-pointer" (click)="navigateToStat(stat.route)">
+        <div class="flex items-start justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <div [class]="'h-2 w-2 rounded-full ' + stat.color"></div>
+              <span class="text-sm font-medium text-white/60">{{ stat.label }}</span>
             </div>
+            
+            @if (stat.loading) {
+              <div class="space-y-2">
+                <app-skeleton variant="text" height="2rem" width="4rem"></app-skeleton>
+                <app-skeleton variant="text" height="0.875rem" width="6rem"></app-skeleton>
+              </div>
+            } @else {
+              <div class="space-y-1">
+                <div class="text-2xl font-bold text-white">{{ stat.value }}</div>
+                <div class="text-xs text-white/40">{{ stat.subtitle }}</div>
+              </div>
+            }
+          </div>
+          
+          <div class="opacity-60 group-hover:opacity-100 transition-opacity duration-200">
+            <svg class="w-5 h-5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+            </svg>
+          </div>
         </div>
-    </ntv-card>
+      </div>
+    }
+  </div>
 
-    <!-- Outlined card -->
-    <ntv-card variant="outlined" rounded="lg" [hoverEffect]="true">
-        <div class="p-6">
-            <h2 class="text-xl font-bold mb-2">Outlined Card</h2>
-            <p class="text-gray-600 mb-4">This card has an outlined variant with hover effects.</p>
-            <ul class="list-disc list-inside text-sm text-gray-700">
-                <li>Component Pantry is working!</li>
-                <li>Tailwind styles are applied</li>
-                <li>Theme colors are configured</li>
-            </ul>
+  <!-- Main Actions -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Installation Queue Access -->
+    <div class="card-modern p-8 group cursor-pointer" (click)="navigateTo('/installations')">
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex items-center gap-4">
+          <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-blue-500/30 flex items-center justify-center">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-white mb-1">Installation Queue</h3>
+            <p class="text-white/60">Track and manage installation workflow</p>
+          </div>
         </div>
-    </ntv-card>
+        
+        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <svg class="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="space-y-1">
+          <div class="text-lg font-semibold text-blue-400">{{ installStats().new }}</div>
+          <div class="text-xs text-white/40">New</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-lg font-semibold text-amber-400">{{ installStats().inProgress }}</div>
+          <div class="text-xs text-white/40">In Progress</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-lg font-semibold text-green-400">{{ installStats().verified }}</div>
+          <div class="text-xs text-white/40">Verified</div>
+        </div>
+      </div>
+    </div>
 
-    <!-- Filled card with custom color -->
-    <ntv-card 
-        variant="filled" 
-        [backgroundColor]="'#8dcb2c'" 
-        rounded="xl" 
-        shadow="lg">
-        <div class="p-6 text-white">
-            <h2 class="text-xl font-bold mb-2">Custom Color Card</h2>
-            <p class="mb-4">This card uses a custom background color (accent green).</p>
-            <ntv-button 
-                variant="outline" 
-                size="sm"
-                [config]="{ shadow: false }">
-                Learn More
-            </ntv-button>
+    <!-- Incident Queue Access -->
+    <div class="card-modern p-8 group cursor-pointer" (click)="navigateTo('/incidents')">
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex items-center gap-4">
+          <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 flex items-center justify-center">
+            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-white mb-1">Incident Queue</h3>
+            <p class="text-white/60">Monitor and resolve support incidents</p>
+          </div>
         </div>
-    </ntv-card>
+        
+        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <svg class="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="space-y-1">
+          <div class="text-lg font-semibold text-red-400">{{ incidentStats().urgent }}</div>
+          <div class="text-xs text-white/40">Urgent</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-lg font-semibold text-amber-400">{{ incidentStats().active }}</div>
+          <div class="text-xs text-white/40">Active</div>
+        </div>
+        <div class="space-y-1">
+          <div class="text-lg font-semibold text-green-400">{{ incidentStats().resolved }}</div>
+          <div class="text-xs text-white/40">Resolved</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- Clickable card -->
-    <ntv-card 
-        variant="default" 
-        [clickable]="true" 
-        [hoverEffect]="true"
-        rounded="lg"
-        shadow="sm"
-        (cardClick)="onButtonClick($event)">
-        <div class="p-6">
-            <h2 class="text-xl font-bold mb-2">Clickable Card</h2>
-            <p class="text-gray-600">Click anywhere on this card to trigger an event!</p>
+  <!-- System Status -->
+  <div class="card-modern p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-lg font-semibold text-white">System Status</h3>
+      <div class="flex items-center gap-2 text-sm text-white/60">
+        <div class="h-2 w-2 rounded-full bg-green-400"></div>
+        <span>All systems operational</span>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      @for (service of systemServices(); track service.name) {
+        <div class="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10">
+          <div class="flex items-center gap-3">
+            <div [class]="'h-2 w-2 rounded-full ' + service.statusColor"></div>
+            <span class="font-medium text-white/80">{{ service.name }}</span>
+          </div>
+          <span class="text-sm text-white/60">{{ service.status }}</span>
         </div>
-    </ntv-card>
+      }
+    </div>
+  </div>
 </div>

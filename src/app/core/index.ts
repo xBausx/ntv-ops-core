@@ -5,5 +5,9 @@
 
 export * from './guards';
 export * from './services';
-export * from './interceptors';
-export * from './models';
+export * from './supabase/supabase.service';
+export * from './cache/swr-cache.service';
+
+// Comment these out until you have files inside these folders
+// export * from './interceptors';
+// export * from './models';
