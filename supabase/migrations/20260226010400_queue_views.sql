@@ -6,10 +6,16 @@ create or replace view public.v_work_item_player_agg as
 select
   wip.work_id,
   count(*)::int as player_count,
-  array_agg(p.license_uuid order by p.license_uuid) as license_uuids,
-  array_agg(p.hostname order by p.hostname nulls last) filter (where p.hostname is not null) as hostnames,
-  array_agg(p.site_alias order by p.site_alias nulls last) filter (where p.site_alias is not null) as site_aliases,
-  array_agg(p.dealer_alias order by p.dealer_alias nulls last) filter (where p.dealer_alias is not null) as dealer_aliases
+
+  (array_agg(distinct p.license_uuid order by p.license_uuid))[1] as primary_license_uuid,
+  min(p.hostname) filter (where p.hostname is not null) as primary_hostname,
+  min(p.site_alias) filter (where p.site_alias is not null) as primary_site_alias,
+  min(p.dealer_alias) filter (where p.dealer_alias is not null) as primary_dealer_alias,
+
+  array_agg(distinct p.license_uuid order by p.license_uuid) as license_uuids,
+  array_agg(distinct p.hostname order by p.hostname) filter (where p.hostname is not null) as hostnames,
+  array_agg(distinct p.site_alias order by p.site_alias) filter (where p.site_alias is not null) as site_aliases,
+  array_agg(distinct p.dealer_alias order by p.dealer_alias) filter (where p.dealer_alias is not null) as dealer_aliases
 from public.work_item_players wip
 join public.players p on p.license_uuid = wip.license_uuid
 group by wip.work_id;
@@ -34,6 +40,10 @@ select
   wi.updated_at,
 
   coalesce(agg.player_count, 0) as player_count,
+  agg.primary_license_uuid,
+  agg.primary_hostname,
+  agg.primary_site_alias,
+  agg.primary_dealer_alias,
   agg.license_uuids,
   agg.hostnames,
   agg.site_aliases,

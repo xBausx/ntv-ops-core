@@ -1,67 +1,64 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Button } from '@ntv360/component-pantry';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [Button],
+  imports: [],
   template: `
-    <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <!-- Icon/Illustration -->
+    <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <!-- Icon -->
       <div class="relative mb-6">
-        <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-white/5 to-white/10 border border-white/10 flex items-center justify-center">
-          <!-- Default icon if no custom icon provided -->
+        <div
+          class="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)]"
+        >
           @if (!customIcon) {
-            <svg class="w-10 h-10 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path 
-                stroke-linecap="round" 
-                stroke-linejoin="round" 
-                stroke-width="1.5" 
-                [attr.d]="defaultIconPath">
-              </path>
+            <svg class="h-9 w-9 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                [attr.d]="defaultIconPath"
+              ></path>
             </svg>
           } @else {
-            <div [innerHTML]="customIcon"></div>
+            <div class="text-white/70" [innerHTML]="customIcon"></div>
           }
         </div>
-        
-        <!-- Subtle glow effect -->
-        <div class="absolute inset-0 w-24 h-24 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-60 blur-xl"></div>
       </div>
-      
+
       <!-- Content -->
       <div class="max-w-md space-y-3">
-        <h3 class="text-lg font-semibold text-white/90 tracking-tight">
+        <h3 class="text-lg font-semibold tracking-tight text-white/90">
           {{ title }}
         </h3>
-        
+
         @if (description) {
-          <p class="text-sm text-white/60 leading-relaxed">
+          <p class="text-sm leading-relaxed text-white/60">
             {{ description }}
           </p>
         }
-        
+
         @if (suggestion) {
-          <p class="text-xs text-white/40 leading-relaxed pt-1">
+          <p class="pt-1 text-xs leading-relaxed text-white/40">
             {{ suggestion }}
           </p>
         }
       </div>
-      
+
       <!-- Actions -->
       @if (showAction && actionText) {
-        <div class="mt-8 flex items-center gap-3">
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
           <button
-            class="btn-modern btn-primary"
+            class="inline-flex items-center justify-center rounded-xl border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:border-white/20 hover:bg-white/[0.14] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             (click)="handleAction()"
             [disabled]="actionDisabled"
           >
             {{ actionText }}
           </button>
-          
+
           @if (secondaryActionText) {
             <button
-              class="btn-modern btn-secondary"
+              class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:border-white/18 hover:bg-white/[0.05] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-50"
               (click)="handleSecondaryAction()"
               [disabled]="secondaryActionDisabled"
             >
@@ -84,10 +81,10 @@ export class EmptyStateComponent {
   @Input() actionDisabled: boolean = false;
   @Input() secondaryActionText?: string;
   @Input() secondaryActionDisabled: boolean = false;
-  
+
   @Output() action = new EventEmitter<void>();
   @Output() secondaryAction = new EventEmitter<void>();
-  
+
   get defaultIconPath(): string {
     switch (this.iconType) {
       case 'search':
@@ -102,11 +99,11 @@ export class EmptyStateComponent {
         return 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z';
     }
   }
-  
+
   handleAction(): void {
     this.action.emit();
   }
-  
+
   handleSecondaryAction(): void {
     this.secondaryAction.emit();
   }

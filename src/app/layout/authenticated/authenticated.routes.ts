@@ -19,29 +19,38 @@ export const AUTHENTICATED_ROUTES: Routes = [
 
       {
         path: 'installations',
-        loadComponent: () =>
-          import('@features/installations').then((m) => m.InstallationsPageComponent),
+        loadChildren: () =>
+          import('@features/installations/shell/installations.routes').then(
+            (m) => m.INSTALLATIONS_ROUTES,
+          ),
       },
       {
         path: 'incidents',
-        loadComponent: () =>
-          import('@features/incidents').then((m) => m.IncidentsPageComponent),
+        loadChildren: () =>
+          import('@features/incidents/shell/incidents.routes').then(
+            (m) => m.INCIDENTS_ROUTES,
+          ),
       },
       {
         path: 'players',
-        loadComponent: () =>
-          import('@features/players').then((m) => m.PlayersPageComponent),
+        loadChildren: () =>
+          import('@features/players/shell/players.routes').then(
+            (m) => m.PLAYERS_ROUTES,
+          ),
       },
       {
         path: 'admin',
-        loadComponent: () =>
-          import('@features/admin').then((m) => m.AdminPageComponent),
+        loadChildren: () =>
+          import('@features/admin/shell/admin.routes').then(
+            (m) => m.ADMIN_ROUTES,
+          ),
       },
-
       {
-        path: 'work/:work_id',
-        loadComponent: () =>
-          import('@features/work').then((m) => m.WorkDetailPageComponent),
+        path: 'work',
+        loadChildren: () =>
+          import('@features/work/shell/work-items.routes').then(
+            (m) => m.WORK_ITEMS_ROUTES,
+          ),
       },
 
       { path: '**', redirectTo: 'dashboard' },

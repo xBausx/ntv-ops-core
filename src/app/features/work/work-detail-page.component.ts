@@ -9,59 +9,13 @@ import { Button, Card } from '@ntv360/component-pantry';
 
 /** Local Imports */
 import { SupabaseService, SwrCacheService } from '@core';
-
-type WorkItem = {
-  work_id: string;
-  type: 'INSTALL' | 'INCIDENT' | 'TASK';
-  status: string;
-  priority: number;
-
-  assignee_user_id: string | null;
-
-  scheduled_for: string | null;
-  sla_due: string | null;
-
-  summary: string;
-  description: string | null;
-
-  blocked_reason_code: string | null;
-  blocked_reason_detail: string | null;
-
-  verified_at: string | null;
-  closed_at: string | null;
-
-  created_at: string;
-  updated_at: string;
-};
-
-type WorkEvent = {
-  event_id: string;
-  work_id: string;
-  event_type: string;
-  payload: any;
-  created_by: string | null;
-  created_at: string;
-};
-
-type LinkedPlayer = {
-  license_uuid: string;
-  hostname: string | null;
-  site_alias: string | null;
-  dealer_alias: string | null;
-  dashboard_url: string | null;
-  mesh_url: string | null;
-};
-
-const WORK_STATUSES = ['NEW', 'SCHEDULED', 'IN_PROGRESS', 'BLOCKED', 'VERIFIED', 'CLOSED'] as const;
-
-type CacheState = {
-  workItem: WorkItem | null;
-  events: WorkEvent[];
-  players: LinkedPlayer[];
-  userRole: string;
-  authHint: boolean;
-  needsProvisioning: boolean;
-};
+import {
+  CLIENT_EDITABLE_WORK_STATUSES,
+  type LinkedPlayer,
+  type WorkDetailCacheState,
+  type WorkEvent,
+  type WorkItem,
+} from './models/work-item.models';
 
 @Component({
   selector: 'app-work-detail-page',
@@ -70,28 +24,35 @@ type CacheState = {
   template: `
     <section class="space-y-6">
       <!-- Header -->
-      <div class="flex items-start justify-between gap-4">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <div class="flex items-center gap-3">
-            <a
-              [routerLink]="backLink()"
-              class="text-xs font-bold text-white/50 hover:text-white/80 underline"
-            >
-              ← Back to {{ backLabel() }}
-            </a>
-          </div>
+          <a
+            [routerLink]="backLink()"
+            class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/45 transition hover:text-white/75"
+          >
+            <span aria-hidden="true">←</span>
+            <span>Back to {{ backLabel() }}</span>
+          </a>
 
-          <h1 class="mt-2 text-2xl md:text-3xl font-extrabold tracking-tight truncate">
-            @if (workItem()) { {{ workItem()!.summary }} } @else { Work Item }
+          <h1 class="mt-2 truncate text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+            @if (workItem()) {
+              {{ workItem()!.summary }}
+            } @else {
+              Work Item
+            }
           </h1>
 
-          <div class="mt-1 text-sm text-white/60">
-            Work ID: <span class="text-white/70 font-semibold">{{ workId() }}</span>
+          <div class="mt-2 text-sm text-white/60">
+            Work ID:
+            <span class="font-semibold text-white/75">{{ workId() }}</span>
           </div>
 
           @if (lastUpdatedLabel()) {
-            <div class="mt-2 text-xs font-semibold text-white/40">
-              Last updated: <span class="text-white/60">{{ lastUpdatedLabel() }}</span>
+            <div
+              class="mt-3 inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-white/45"
+            >
+              <span>Last updated:</span>
+              <span class="ml-1 text-white/65">{{ lastUpdatedLabel() }}</span>
               @if (isRevalidating()) {
                 <span class="ml-2 text-white/30">(refreshing…)</span>
               }
@@ -99,7 +60,7 @@ type CacheState = {
           }
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <ntv-button (click)="refreshHard()" [disabled]="isLoading() || !isBrowser()">
             Refresh
           </ntv-button>
@@ -111,16 +72,18 @@ type CacheState = {
         <div class="p-4 md:p-5">
           @if (!isBrowser()) {
             <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p class="text-sm text-white/70 font-semibold">SSR render</p>
+              <p class="text-sm font-semibold text-white/70">SSR render</p>
               <p class="mt-1 text-sm text-white/60">Data loads in the browser only.</p>
             </div>
           } @else {
             @if (authHint()) {
               <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm text-white/70 font-semibold">Sign-in required</p>
+                <p class="text-sm font-semibold text-white/70">Sign-in required</p>
                 <p class="mt-1 text-sm text-white/60">
                   Go to
-                  <a routerLink="/login" class="font-semibold text-white/80 hover:text-white underline">/login</a>
+                  <a routerLink="/login" class="font-semibold text-white/80 underline hover:text-white">
+                    /login
+                  </a>
                   to authenticate.
                 </p>
               </div>
@@ -130,7 +93,8 @@ type CacheState = {
               <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
                 <p class="text-sm font-bold text-amber-200">Account not provisioned</p>
                 <p class="mt-1 text-sm text-amber-100/80">
-                  You’re signed in but missing a role row in <span class="font-semibold">public.profiles</span>.
+                  You’re signed in but missing a role row in
+                  <span class="font-semibold">public.profiles</span>.
                 </p>
               </div>
             }
@@ -138,58 +102,63 @@ type CacheState = {
             @if (errorText()) {
               <div class="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
                 <p class="text-sm font-bold text-red-200">Error</p>
-                <p class="mt-1 text-sm text-red-100/80 whitespace-pre-wrap">{{ errorText() }}</p>
+                <p class="mt-1 whitespace-pre-wrap text-sm text-red-100/80">{{ errorText() }}</p>
               </div>
             }
 
             @if (isLoading() && !workItem()) {
-              <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm text-white/70 font-semibold">Loading…</p>
+              <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p class="text-sm font-semibold text-white/75">Loading…</p>
               </div>
             } @else if (!authHint() && !needsProvisioning() && !workItem()) {
-              <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm text-white/70 font-semibold">Not found</p>
+              <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p class="text-sm font-semibold text-white/75">Not found</p>
                 <p class="mt-1 text-sm text-white/60">No work item returned for this ID.</p>
               </div>
             } @else if (workItem()) {
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div class="text-[10px] font-bold text-white/40">Type</div>
-                  <div class="text-sm font-extrabold text-white/80 mt-1">{{ workItem()!.type }}</div>
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-[10px] font-bold uppercase tracking-wide text-white/40">Type</div>
+                  <div class="mt-1 text-sm font-extrabold text-white/85">{{ workItem()!.type }}</div>
                 </div>
 
-                <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div class="text-[10px] font-bold text-white/40">Status</div>
-                  <div class="text-sm font-extrabold text-white/80 mt-1">{{ workItem()!.status }}</div>
+                <div class="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">
+                  <div class="text-[10px] font-bold uppercase tracking-wide text-blue-200/70">Status</div>
+                  <div class="mt-1 text-sm font-extrabold text-blue-100">{{ workItem()!.status }}</div>
                 </div>
 
-                <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div class="text-[10px] font-bold text-white/40">Priority</div>
-                  <div class="text-sm font-extrabold text-white/80 mt-1">{{ workItem()!.priority }}</div>
+                <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-[10px] font-bold uppercase tracking-wide text-white/40">Priority</div>
+                  <div class="mt-1 text-sm font-extrabold text-white/85">{{ workItem()!.priority }}</div>
                 </div>
               </div>
 
               <!-- Update status -->
-              <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div class="flex items-start justify-between gap-4">
-                  <div>
-                    <div class="text-sm font-extrabold text-white/80">Update status</div>
-                    <div class="mt-1 text-sm text-white/60">
-                      Changing status appends <span class="font-semibold">STATUS_CHANGED</span> via DB trigger.
-                    </div>
+              <div class="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div class="text-sm text-white/60">
+                    Client updates currently support
+                    <span class="font-semibold text-white/75">NEW</span>,
+                    <span class="font-semibold text-white/75">SCHEDULED</span>,
+                    <span class="font-semibold text-white/75">IN_PROGRESS</span>, and
+                    <span class="font-semibold text-white/75">BLOCKED</span>.
+                    <span class="font-semibold text-white/75">VERIFIED</span> and
+                    <span class="font-semibold text-white/75">CLOSED</span> require a privileged backend operation.
                   </div>
 
-                  <div class="text-right">
-                    <div class="text-xs font-bold text-white/40">Role</div>
-                    <div class="text-sm font-extrabold text-white/70">{{ userRole() || '—' }}</div>
+                  <div class="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-right">
+                    <div class="text-[10px] font-bold uppercase tracking-wide text-white/40">Role</div>
+                    <div class="text-sm font-extrabold text-white/75">{{ userRole() || '—' }}</div>
                   </div>
                 </div>
 
-                <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
                   <div>
-                    <label class="block text-xs font-bold text-white/60 mb-1">New status</label>
+                    <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">
+                      New status
+                    </label>
                     <select
-                      class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                      class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/20 focus:bg-white/[0.06]"
                       [value]="statusDraft()"
                       (change)="onStatusDraft($event)"
                       [disabled]="!isWritable()"
@@ -202,9 +171,11 @@ type CacheState = {
 
                   @if (statusDraft() === 'BLOCKED') {
                     <div>
-                      <label class="block text-xs font-bold text-white/60 mb-1">Blocked reason code</label>
+                      <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">
+                        Blocked reason code
+                      </label>
                       <input
-                        class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                        class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
                         placeholder="e.g. PARTS_WAITING"
                         [value]="blockedCodeDraft()"
                         (input)="onBlockedCodeDraft($event)"
@@ -213,19 +184,23 @@ type CacheState = {
                     </div>
 
                     <div>
-                      <label class="block text-xs font-bold text-white/60 mb-1">Blocked details</label>
+                      <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">
+                        Blocked details
+                      </label>
                       <input
-                        class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
-                        placeholder="Explain what’s blocking…"
+                        class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                        placeholder="Explain what's blocking…"
                         [value]="blockedDetailDraft()"
                         (input)="onBlockedDetailDraft($event)"
                         [disabled]="!isWritable()"
                       />
                     </div>
                   } @else {
-                    <div class="lg:col-span-2 flex items-end">
+                    <div class="flex items-end lg:col-span-2">
                       <div class="text-sm text-white/50">
-                        Tip: choose <span class="font-semibold text-white/70">BLOCKED</span> to set blocked reason fields.
+                        Tip: choose
+                        <span class="font-semibold text-white/70">BLOCKED</span>
+                        to set blocked reason fields.
                       </div>
                     </div>
                   }
@@ -233,7 +208,7 @@ type CacheState = {
 
                 <div class="mt-4 flex items-center justify-end gap-2">
                   <button
-                    class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition disabled:opacity-50"
+                    class="inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/20 hover:bg-white/[0.10] hover:text-white disabled:opacity-50"
                     (click)="resetDraft()"
                     [disabled]="!isWritable() || isSavingStatus()"
                   >
@@ -241,7 +216,11 @@ type CacheState = {
                   </button>
 
                   <ntv-button (click)="saveStatus()" [disabled]="!isWritable() || isSavingStatus()">
-                    @if (isSavingStatus()) { Saving… } @else { Save }
+                    @if (isSavingStatus()) {
+                      Saving…
+                    } @else {
+                      Save
+                    }
                   </ntv-button>
                 </div>
 
@@ -253,17 +232,18 @@ type CacheState = {
               </div>
 
               <!-- Add note -->
-              <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div class="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <div class="text-sm font-extrabold text-white/80">Add note</div>
                 <div class="mt-1 text-sm text-white/60">
-                  Adds an append-only audit event: <span class="font-semibold">NOTE_ADDED</span>.
+                  Adds an append-only audit event:
+                  <span class="font-semibold text-white/75">NOTE_ADDED</span>.
                 </div>
 
                 <div class="mt-4">
-                  <label class="block text-xs font-bold text-white/60 mb-1">Note</label>
+                  <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Note</label>
                   <textarea
-                    class="w-full min-h-[96px] rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
-                    placeholder="What happened? What did you check? What’s the next step?"
+                    class="min-h-[96px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                    placeholder="What happened? What did you check? What's the next step?"
                     [value]="noteDraft()"
                     (input)="onNoteDraft($event)"
                     [disabled]="!isWritable()"
@@ -272,7 +252,7 @@ type CacheState = {
 
                 <div class="mt-3 flex items-center justify-end gap-2">
                   <button
-                    class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition disabled:opacity-50"
+                    class="inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/20 hover:bg-white/[0.10] hover:text-white disabled:opacity-50"
                     (click)="noteDraft.set('')"
                     [disabled]="!isWritable() || isSavingNote()"
                   >
@@ -283,7 +263,11 @@ type CacheState = {
                     (click)="addNote()"
                     [disabled]="!isWritable() || isSavingNote() || noteDraft().trim().length === 0"
                   >
-                    @if (isSavingNote()) { Adding… } @else { Add note }
+                    @if (isSavingNote()) {
+                      Adding…
+                    } @else {
+                      Add note
+                    }
                   </ntv-button>
                 </div>
               </div>
@@ -517,32 +501,55 @@ type CacheState = {
       <!-- Timeline -->
       <ntv-card>
         <div class="p-4 md:p-5">
-          <div class="flex items-center justify-between">
-            <div class="text-sm font-extrabold text-white/80">Timeline</div>
-            <div class="text-xs font-semibold text-white/40">{{ events().length }}</div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div class="text-sm font-extrabold text-white/80">Timeline</div>
+              <div class="mt-1 text-sm text-white/55">
+                Append-only event history for this work item, including notes and state transitions.
+              </div>
+            </div>
+
+            <div
+              class="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-white/45"
+            >
+              {{ events().length }} events
+            </div>
           </div>
 
           @if (events().length === 0) {
-            <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+            <div class="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-sm text-white/60">
               No events yet.
             </div>
           } @else {
-            <div class="mt-4 space-y-2">
+            <div class="mt-4 space-y-3">
               @for (e of events(); track e.event_id) {
-                <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div class="flex items-start justify-between gap-4">
-                    <div>
-                      <div class="text-sm font-extrabold text-white/80">{{ e.event_type }}</div>
-                      <div class="mt-1 text-xs text-white/50">
-                        {{ e.created_at | date:'MMM d, y h:mm a' }}
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-white/15 hover:bg-white/[0.05]">
+                  <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <div class="text-sm font-extrabold text-white/85">{{ e.event_type }}</div>
+                        <span class="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-semibold text-white/45">
+                          {{ e.created_at | date:'MMM d, y h:mm a' }}
+                        </span>
                       </div>
-                    </div>
-                    <div class="text-xs text-white/40">
-                      {{ e.created_by || '' }}
+
+                      @if (e.created_by) {
+                        <div class="mt-2 text-xs text-white/45">
+                          Created by
+                          <span class="font-semibold text-white/65">{{ e.created_by }}</span>
+                        </div>
+                      }
                     </div>
                   </div>
 
-                  <pre class="mt-3 text-xs text-white/70 bg-black/40 border border-white/10 rounded-xl p-3 overflow-auto"><code>{{ stringify(e.payload) }}</code></pre>
+                  <div class="mt-4">
+                    <div class="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
+                      Payload
+                    </div>
+                    <pre
+                      class="overflow-auto rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-white/70"
+                    ><code>{{ stringify(e.payload) }}</code></pre>
+                  </div>
                 </div>
               }
             </div>
@@ -573,14 +580,13 @@ export class WorkDetailPageComponent {
   readonly needsProvisioning = signal<boolean>(false);
 
   readonly userRole = signal<string>('');
-
   readonly workId = signal<string>('');
 
   readonly workItem = signal<WorkItem | null>(null);
   readonly events = signal<WorkEvent[]>([]);
   readonly players = signal<LinkedPlayer[]>([]);
 
-  readonly statuses = signal<string[]>([...WORK_STATUSES]);
+  readonly statuses = signal<string[]>([...CLIENT_EDITABLE_WORK_STATUSES]);
   readonly isWritable = computed(() => this.userRole() === 'ADMIN' || this.userRole() === 'OPS');
 
   readonly statusDraft = signal<string>('NEW');
@@ -588,7 +594,6 @@ export class WorkDetailPageComponent {
   readonly blockedDetailDraft = signal<string>('');
   readonly noteDraft = signal<string>('');
 
-  // Linking state
   readonly linkInput = signal<string>('');
   readonly isLinking = signal<boolean>(false);
   readonly linkError = signal<string>('');
@@ -596,68 +601,94 @@ export class WorkDetailPageComponent {
   readonly isUnlinking = signal<boolean>(false);
   readonly unlinkError = signal<string>('');
 
-  // Player search state
   readonly playerSearch = signal<string>('');
   readonly isSearching = signal<boolean>(false);
   readonly searchError = signal<string>('');
   readonly searchResults = signal<LinkedPlayer[]>([]);
 
-  readonly linkedSet = computed(() => new Set(this.players().map((p) => p.license_uuid)));
+  readonly linkedSet = computed(() => new Set(this.players().map((player) => player.license_uuid)));
 
   readonly parsedLinkUuids = computed(() => {
     const raw = this.linkInput();
-    if (!raw) return [];
+    if (!raw) {
+      return [];
+    }
 
     const parts = raw
       .split(/[\s,;]+/g)
-      .map((s) => s.trim())
+      .map((value) => value.trim())
       .filter(Boolean);
 
     const uuidRe =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-    const uniq = new Set<string>();
-    for (const p of parts) {
-      if (uuidRe.test(p)) uniq.add(p.toLowerCase());
+    const uniqueValues = new Set<string>();
+    for (const part of parts) {
+      if (uuidRe.test(part)) {
+        uniqueValues.add(part.toLowerCase());
+      }
     }
-    return Array.from(uniq);
+
+    return Array.from(uniqueValues);
   });
 
   readonly backLink = computed(() => {
-    const wi = this.workItem();
-    if (!wi) return '/installations';
-    if (wi.type === 'INCIDENT') return '/incidents';
-    if (wi.type === 'TASK') return '/installations';
+    const workItem = this.workItem();
+    if (!workItem) {
+      return '/installations';
+    }
+
+    if (workItem.type === 'INCIDENT') {
+      return '/incidents';
+    }
+
+    if (workItem.type === 'TASK') {
+      return '/installations';
+    }
+
     return '/installations';
   });
 
   readonly backLabel = computed(() => {
-    const wi = this.workItem();
-    if (!wi) return 'Install Queue';
-    if (wi.type === 'INCIDENT') return 'Incident Queue';
-    if (wi.type === 'TASK') return 'Queues';
+    const workItem = this.workItem();
+    if (!workItem) {
+      return 'Install Queue';
+    }
+
+    if (workItem.type === 'INCIDENT') {
+      return 'Incident Queue';
+    }
+
+    if (workItem.type === 'TASK') {
+      return 'Queues';
+    }
+
     return 'Install Queue';
   });
 
   readonly lastUpdatedLabel = computed(() => {
     const id = this.workId();
-    if (!id) return '';
-    const ts = this.swr.fetchedAt(this.cacheKeyFor(id));
-    if (!ts) return '';
-    return new Date(ts).toLocaleString();
+    if (!id) {
+      return '';
+    }
+
+    const fetchedAt = this.swr.fetchedAt(this.cacheKeyFor(id));
+    if (!fetchedAt) {
+      return '';
+    }
+
+    return new Date(fetchedAt).toLocaleString();
   });
 
-  isBrowser(): boolean {
+  public isBrowser(): boolean {
     return this.supabase.isBrowser();
   }
 
-  constructor() {
-    // Initial id
+  public constructor() {
     this.workId.set(this.route.snapshot.paramMap.get('work_id') ?? '');
 
-    // Handle param changes (Angular may reuse component for same route with different params)
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((pm) => {
-      const id = pm.get('work_id') ?? '';
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((paramMap) => {
+      const id = paramMap.get('work_id') ?? '';
       if (id && id !== this.workId()) {
         this.workId.set(id);
         void this.initLoad(false);
@@ -681,18 +712,16 @@ export class WorkDetailPageComponent {
       return;
     }
 
-    // INSTALL + TASK currently flow back to Install Queue
     if (type === 'INSTALL' || type === 'TASK') {
       this.swr.invalidate(this.installQueueCacheKey);
       return;
     }
 
-    // Fallback: invalidate both
     this.swr.invalidate(this.installQueueCacheKey);
     this.swr.invalidate(this.incidentQueueCacheKey);
   }
 
-  private applyState(state: CacheState): void {
+  private applyState(state: WorkDetailCacheState): void {
     this.authHint.set(state.authHint);
     this.needsProvisioning.set(state.needsProvisioning);
     this.userRole.set(state.userRole);
@@ -712,16 +741,16 @@ export class WorkDetailPageComponent {
     this.errorText.set('');
 
     const id = this.workId();
-    if (!this.supabase.isBrowser() || !id) return;
+    if (!this.supabase.isBrowser() || !id) {
+      return;
+    }
 
     const key = this.cacheKeyFor(id);
+    const cached = this.swr.read<WorkDetailCacheState>(key);
 
-    // 1) hydrate instantly
-    const cached = this.swr.read<CacheState>(key);
     if (cached) {
       this.applyState(cached);
     } else {
-      // clear visible state when switching to a workId with no cache
       this.applyState({
         workItem: null,
         events: [],
@@ -732,37 +761,46 @@ export class WorkDetailPageComponent {
       });
     }
 
-    // 2) revalidate when stale (or forced)
     const shouldRevalidate = force || this.swr.isStale(key, this.ttlMs);
-    if (!shouldRevalidate) return;
+    if (!shouldRevalidate) {
+      return;
+    }
 
-    const blocking = !cached;
-    if (blocking) this.isLoading.set(true);
-    else this.isRevalidating.set(true);
+    const isBlockingLoad = !cached;
+    if (isBlockingLoad) {
+      this.isLoading.set(true);
+    } else {
+      this.isRevalidating.set(true);
+    }
 
     try {
-      const state = await this.swr.revalidate<CacheState>(key, async () => this.fetchFreshState(id));
+      const state = await this.swr.revalidate<WorkDetailCacheState>(key, async () => this.fetchFreshState(id));
       this.applyState(state);
-    } catch (e) {
-      this.errorText.set(String(e));
+    } catch (error: unknown) {
+      this.errorText.set(String(error));
     } finally {
-      if (blocking) this.isLoading.set(false);
-      else this.isRevalidating.set(false);
+      if (isBlockingLoad) {
+        this.isLoading.set(false);
+      } else {
+        this.isRevalidating.set(false);
+      }
     }
   }
 
-  async refreshHard(): Promise<void> {
+  public async refreshHard(): Promise<void> {
     const id = this.workId();
-    if (!id) return;
+    if (!id) {
+      return;
+    }
+
     this.swr.invalidate(this.cacheKeyFor(id));
     await this.initLoad(true);
   }
 
-  private async fetchFreshState(workId: string): Promise<CacheState> {
+  private async fetchFreshState(workId: string): Promise<WorkDetailCacheState> {
     const client = this.supabase.client();
 
-    // default
-    const base: CacheState = {
+    const baseState: WorkDetailCacheState = {
       workItem: null,
       events: [],
       players: [],
@@ -771,25 +809,21 @@ export class WorkDetailPageComponent {
       needsProvisioning: false,
     };
 
-    const sessionRes = await client.auth.getSession();
-    const session = sessionRes.data.session;
+    const sessionResult = await client.auth.getSession();
+    const session = sessionResult.data.session;
 
     if (!session) {
-      return { ...base, authHint: true };
+      return { ...baseState, authHint: true };
     }
 
-    const { data: profile, error: profileError } = await client.from('profiles').select('role').maybeSingle();
-    if (profileError) {
-      // keep going; we’ll show the error via errorText in initLoad catch if it throws later
-    }
+    const { data: profile } = await client.from('profiles').select('role').maybeSingle();
 
     const role = profile?.role ?? '';
     if (!role) {
-      return { ...base, needsProvisioning: true };
+      return { ...baseState, needsProvisioning: true };
     }
 
-    // Work item
-    const { data: wi, error: wiError } = await client
+    const { data: workItemData, error: workItemError } = await client
       .from('work_items')
       .select(
         `
@@ -813,54 +847,52 @@ export class WorkDetailPageComponent {
       .eq('work_id', workId)
       .maybeSingle();
 
-    if (wiError) {
-      throw new Error(wiError.message);
+    if (workItemError) {
+      throw new Error(workItemError.message);
     }
 
-    const work = (wi as WorkItem) ?? null;
+    const workItem = (workItemData as WorkItem) ?? null;
 
-    // Events
-    const { data: ev, error: evError } = await client
+    const { data: eventData, error: eventError } = await client
       .from('work_events')
-      .select(`event_id, work_id, event_type, payload, created_by, created_at`)
+      .select('event_id, work_id, event_type, payload, created_by, created_at')
       .eq('work_id', workId)
       .order('created_at', { ascending: false })
       .limit(200);
 
-    if (evError) {
-      throw new Error(evError.message);
+    if (eventError) {
+      throw new Error(eventError.message);
     }
 
-    // Linked players
-    const { data: wip, error: wipError } = await client
+    const { data: linkedPlayerRows, error: linkedPlayerRowsError } = await client
       .from('work_item_players')
-      .select(`license_uuid`)
+      .select('license_uuid')
       .eq('work_id', workId);
 
-    if (wipError) {
-      throw new Error(wipError.message);
+    if (linkedPlayerRowsError) {
+      throw new Error(linkedPlayerRowsError.message);
     }
 
-    const licenseUuids = (wip ?? []).map((x) => x.license_uuid).filter(Boolean);
+    const licenseUuids = (linkedPlayerRows ?? []).map((row) => row.license_uuid).filter(Boolean);
     let players: LinkedPlayer[] = [];
 
     if (licenseUuids.length > 0) {
-      const { data: ps, error: psError } = await client
+      const { data: playerData, error: playerError } = await client
         .from('players')
-        .select(`license_uuid, hostname, site_alias, dealer_alias, dashboard_url, mesh_url`)
+        .select('license_uuid, hostname, site_alias, dealer_alias, dashboard_url, mesh_url')
         .in('license_uuid', licenseUuids)
         .limit(200);
 
-      if (psError) {
-        throw new Error(psError.message);
+      if (playerError) {
+        throw new Error(playerError.message);
       }
 
-      players = (ps ?? []) as LinkedPlayer[];
+      players = (playerData ?? []) as LinkedPlayer[];
     }
 
     return {
-      workItem: work,
-      events: (ev ?? []) as WorkEvent[],
+      workItem,
+      events: (eventData ?? []) as WorkEvent[],
       players,
       userRole: role,
       authHint: false,
@@ -868,60 +900,73 @@ export class WorkDetailPageComponent {
     };
   }
 
-  // UI handlers
-  onStatusDraft(event: Event): void {
+  public onStatusDraft(event: Event): void {
     const select = event.target as HTMLSelectElement | null;
     this.statusDraft.set(select?.value ?? 'NEW');
   }
 
-  onBlockedCodeDraft(event: Event): void {
+  public onBlockedCodeDraft(event: Event): void {
     const input = event.target as HTMLInputElement | null;
     this.blockedCodeDraft.set(input?.value ?? '');
   }
 
-  onBlockedDetailDraft(event: Event): void {
+  public onBlockedDetailDraft(event: Event): void {
     const input = event.target as HTMLInputElement | null;
     this.blockedDetailDraft.set(input?.value ?? '');
   }
 
-  onNoteDraft(event: Event): void {
+  public onNoteDraft(event: Event): void {
     const input = event.target as HTMLTextAreaElement | null;
     this.noteDraft.set(input?.value ?? '');
   }
 
-  onLinkInput(event: Event): void {
+  public onLinkInput(event: Event): void {
     const input = event.target as HTMLTextAreaElement | null;
     this.linkInput.set(input?.value ?? '');
   }
 
-  onPlayerSearchInput(event: Event): void {
+  public onPlayerSearchInput(event: Event): void {
     const input = event.target as HTMLInputElement | null;
     this.playerSearch.set(input?.value ?? '');
   }
 
-  clearSearch(): void {
+  public clearSearch(): void {
     this.searchError.set('');
     this.searchResults.set([]);
     this.playerSearch.set('');
   }
 
-  resetDraft(): void {
-    const wi = this.workItem();
-    if (!wi) return;
-    this.statusDraft.set(wi.status);
-    this.blockedCodeDraft.set(wi.blocked_reason_code ?? '');
-    this.blockedDetailDraft.set(wi.blocked_reason_detail ?? '');
+  public resetDraft(): void {
+    const workItem = this.workItem();
+    if (!workItem) {
+      return;
+    }
+
+    this.statusDraft.set(workItem.status);
+    this.blockedCodeDraft.set(workItem.blocked_reason_code ?? '');
+    this.blockedDetailDraft.set(workItem.blocked_reason_detail ?? '');
   }
 
-  async saveStatus(): Promise<void> {
+  public async saveStatus(): Promise<void> {
     this.errorText.set('');
-    if (!this.supabase.isBrowser() || !this.isWritable()) return;
+    if (!this.supabase.isBrowser() || !this.isWritable()) {
+      return;
+    }
 
-    const wi = this.workItem();
-    if (!wi) return;
+    const workItem = this.workItem();
+    if (!workItem) {
+      return;
+    }
 
     const newStatus = this.statusDraft();
     const isBlocked = newStatus === 'BLOCKED';
+
+    if (newStatus === 'VERIFIED' || newStatus === 'CLOSED') {
+      this.errorText.set(
+        `${newStatus} must be performed by a privileged backend operation. Use the future Verify/Close server action instead.`,
+      );
+      return;
+    }
 
     this.isSavingStatus.set(true);
     try {
@@ -936,7 +981,7 @@ export class WorkDetailPageComponent {
         blocked_reason_detail: isBlocked ? (this.blockedDetailDraft().trim() || null) : null,
       };
 
-      const { error } = await client.from('work_items').update(patch).eq('work_id', wi.work_id);
+      const { error } = await client.from('work_items').update(patch).eq('work_id', workItem.work_id);
       if (error) {
         this.errorText.set(error.message);
         return;
@@ -944,22 +989,28 @@ export class WorkDetailPageComponent {
 
       this.invalidateRelatedQueueCaches();
       await this.refreshHard();
-    } catch (e) {
-      this.errorText.set(String(e));
+    } catch (error: unknown) {
+      this.errorText.set(String(error));
     } finally {
       this.isSavingStatus.set(false);
     }
   }
 
-  async addNote(): Promise<void> {
+  public async addNote(): Promise<void> {
     this.errorText.set('');
-    if (!this.supabase.isBrowser() || !this.isWritable()) return;
+    if (!this.supabase.isBrowser() || !this.isWritable()) {
+      return;
+    }
 
     const text = this.noteDraft().trim();
-    if (!text) return;
+    if (!text) {
+      return;
+    }
 
-    const wi = this.workItem();
-    if (!wi) return;
+    const workItem = this.workItem();
+    if (!workItem) {
+      return;
+    }
 
     this.isSavingNote.set(true);
     try {
@@ -968,7 +1019,7 @@ export class WorkDetailPageComponent {
       const userId = sessionData.session?.user?.id ?? null;
 
       const { error } = await client.from('work_events').insert({
-        work_id: wi.work_id,
+        work_id: workItem.work_id,
         event_type: 'NOTE_ADDED',
         payload: { text },
         created_by: userId,
@@ -982,23 +1033,27 @@ export class WorkDetailPageComponent {
       this.noteDraft.set('');
       this.invalidateRelatedQueueCaches();
       await this.refreshHard();
-    } catch (e) {
-      this.errorText.set(String(e));
+    } catch (error: unknown) {
+      this.errorText.set(String(error));
     } finally {
       this.isSavingNote.set(false);
     }
   }
 
-  async searchPlayers(): Promise<void> {
+  public async searchPlayers(): Promise<void> {
     this.searchError.set('');
 
-    if (!this.supabase.isBrowser()) return;
+    if (!this.supabase.isBrowser()) {
+      return;
+    }
 
-    const qRaw = this.playerSearch().trim();
-    if (qRaw.length < 2) return;
+    const queryRaw = this.playerSearch().trim();
+    if (queryRaw.length < 2) {
+      return;
+    }
 
-    const q = qRaw.replace(/[(),]/g, ' ').trim();
-    const like = `%${q}%`;
+    const query = queryRaw.replace(/[(),]/g, ' ').trim();
+    const like = `%${query}%`;
 
     this.isSearching.set(true);
     try {
@@ -1006,7 +1061,7 @@ export class WorkDetailPageComponent {
 
       const { data, error } = await client
         .from('players')
-        .select(`license_uuid, hostname, site_alias, dealer_alias, dashboard_url, mesh_url`)
+        .select('license_uuid, hostname, site_alias, dealer_alias, dashboard_url, mesh_url')
         .or(
           [
             `license_uuid.ilike.${like}`,
@@ -1024,31 +1079,38 @@ export class WorkDetailPageComponent {
       }
 
       this.searchResults.set((data ?? []) as LinkedPlayer[]);
-    } catch (e) {
-      this.searchError.set(String(e));
+    } catch (error: unknown) {
+      this.searchError.set(String(error));
       this.searchResults.set([]);
     } finally {
       this.isSearching.set(false);
     }
   }
 
-  async addFromSearch(licenseUuid: string): Promise<void> {
-    if (!this.isWritable()) return;
+  public async addFromSearch(licenseUuid: string): Promise<void> {
+    if (!this.isWritable()) {
+      return;
+    }
+
     await this.linkSinglePlayer(licenseUuid);
   }
 
   private async linkSinglePlayer(licenseUuid: string): Promise<void> {
     this.linkError.set('');
-    if (!this.supabase.isBrowser() || !this.isWritable()) return;
+    if (!this.supabase.isBrowser() || !this.isWritable()) {
+      return;
+    }
 
-    const wi = this.workItem();
-    if (!wi) return;
+    const workItem = this.workItem();
+    if (!workItem) {
+      return;
+    }
 
     this.isLinking.set(true);
     try {
       const client = this.supabase.client();
       const { error } = await client.from('work_item_players').insert({
-        work_id: wi.work_id,
+        work_id: workItem.work_id,
         license_uuid: licenseUuid,
       });
 
@@ -1059,27 +1121,33 @@ export class WorkDetailPageComponent {
 
       this.invalidateRelatedQueueCaches();
       await this.refreshHard();
-    } catch (e) {
-      this.linkError.set(String(e));
+    } catch (error: unknown) {
+      this.linkError.set(String(error));
     } finally {
       this.isLinking.set(false);
     }
   }
 
-  async linkPlayers(): Promise<void> {
+  public async linkPlayers(): Promise<void> {
     this.linkError.set('');
-    if (!this.supabase.isBrowser() || !this.isWritable()) return;
+    if (!this.supabase.isBrowser() || !this.isWritable()) {
+      return;
+    }
 
-    const wi = this.workItem();
-    if (!wi) return;
+    const workItem = this.workItem();
+    if (!workItem) {
+      return;
+    }
 
     const uuids = this.parsedLinkUuids();
-    if (uuids.length === 0) return;
+    if (uuids.length === 0) {
+      return;
+    }
 
     this.isLinking.set(true);
     try {
       const client = this.supabase.client();
-      const payload = uuids.map((license_uuid) => ({ work_id: wi.work_id, license_uuid }));
+      const payload = uuids.map((license_uuid) => ({ work_id: workItem.work_id, license_uuid }));
       const { error } = await client.from('work_item_players').insert(payload);
 
       if (error) {
@@ -1090,19 +1158,23 @@ export class WorkDetailPageComponent {
       this.linkInput.set('');
       this.invalidateRelatedQueueCaches();
       await this.refreshHard();
-    } catch (e) {
-      this.linkError.set(String(e));
+    } catch (error: unknown) {
+      this.linkError.set(String(error));
     } finally {
       this.isLinking.set(false);
     }
   }
 
-  async unlinkPlayer(licenseUuid: string): Promise<void> {
+  public async unlinkPlayer(licenseUuid: string): Promise<void> {
     this.unlinkError.set('');
-    if (!this.supabase.isBrowser() || !this.isWritable()) return;
+    if (!this.supabase.isBrowser() || !this.isWritable()) {
+      return;
+    }
 
-    const wi = this.workItem();
-    if (!wi) return;
+    const workItem = this.workItem();
+    if (!workItem) {
+      return;
+    }
 
     this.isUnlinking.set(true);
     try {
@@ -1110,7 +1182,7 @@ export class WorkDetailPageComponent {
       const { error } = await client
         .from('work_item_players')
         .delete()
-        .eq('work_id', wi.work_id)
+        .eq('work_id', workItem.work_id)
         .eq('license_uuid', licenseUuid);
 
       if (error) {
@@ -1120,14 +1192,14 @@ export class WorkDetailPageComponent {
 
       this.invalidateRelatedQueueCaches();
       await this.refreshHard();
-    } catch (e) {
-      this.unlinkError.set(String(e));
+    } catch (error: unknown) {
+      this.unlinkError.set(String(error));
     } finally {
       this.isUnlinking.set(false);
     }
   }
 
-  stringify(payload: any): string {
+  public stringify(payload: unknown): string {
     try {
       return JSON.stringify(payload ?? {}, null, 2);
     } catch {

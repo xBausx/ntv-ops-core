@@ -3,7 +3,6 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { Button } from '@ntv360/component-pantry';
 import { SupabaseService } from '@core';
 
 type NavItem = {
@@ -16,41 +15,36 @@ type NavItem = {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="min-h-screen bg-neutral-950 text-white flex">
+    <div class="flex min-h-screen bg-neutral-950 text-white">
       <!-- Left nav -->
-      <aside class="w-72 shrink-0 border-r border-white/10 bg-gradient-to-b from-black to-neutral-950/95 backdrop-blur-xl flex flex-col">
+      <aside class="flex w-72 shrink-0 flex-col border-r border-white/10 bg-black/60 backdrop-blur-xl">
         <!-- Header -->
-        <div class="h-16 flex items-center px-6 border-b border-white/10 relative">
-          <div class="leading-tight">
-            <div class="text-lg font-extrabold tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              Ops Core
+        <div class="relative flex h-16 items-center border-b border-white/10 px-6">
+          <div class="flex items-center gap-3">
+            <span class="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-blue-400 to-violet-400"></span>
+            <div class="leading-tight">
+              <div class="text-lg font-extrabold tracking-tight text-white">Ops Core</div>
+              <div class="text-xs font-semibold text-white/50">NTV360 Night Ops</div>
             </div>
-            <div class="text-xs font-semibold text-white/60 -mt-0.5">NTV360 Night Ops</div>
           </div>
-          
-          <!-- Subtle glow accent -->
-          <div class="absolute top-0 left-6 w-16 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
         </div>
 
         <!-- Navigation -->
-        <nav class="p-4 flex-1 space-y-1">
+        <nav class="flex-1 space-y-1 p-4">
           @for (item of navItems; track item.path) {
             <a
               [routerLink]="item.path"
-              routerLinkActive="bg-gradient-to-r from-white/10 to-white/5 border-white/20 shadow-lg transform scale-[1.02]"
-              class="group flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-white/5 hover:to-white/10 transition-all duration-200 ease-out border border-transparent hover:border-white/10 hover:shadow-md hover:transform hover:scale-[1.01]"
+              routerLinkActive="border-white/14 bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.04)]"
+              class="group flex items-center justify-between rounded-2xl border border-transparent px-4 py-3 text-sm font-semibold text-white/65 transition duration-200 ease-out hover:border-white/10 hover:bg-white/[0.05] hover:text-white"
             >
               <span class="flex items-center gap-4">
-                <span class="relative">
-                  <span
-                    class="h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-violet-400 opacity-60 group-hover:opacity-100 transition-all duration-200 group-hover:scale-125"
-                  ></span>
-                  <span class="absolute inset-0 h-2 w-2 rounded-full bg-gradient-to-r from-blue-400 to-violet-400 opacity-30 group-hover:opacity-60 blur-sm transition-all duration-200"></span>
+                <span class="relative flex h-2.5 w-2.5 items-center justify-center">
+                  <span class="h-2 w-2 rounded-full bg-white/35 transition duration-200 group-hover:bg-white/60"></span>
                 </span>
                 <span>{{ item.label }}</span>
               </span>
 
-              <span class="text-[10px] font-bold text-white/20 group-hover:text-white/40 transition-colors duration-200">
+              <span class="text-[10px] font-bold text-white/20 transition-colors duration-200 group-hover:text-white/35">
                 →
               </span>
             </a>
@@ -58,38 +52,52 @@ type NavItem = {
         </nav>
 
         <!-- Footer -->
-        <div class="p-4 border-t border-white/10 bg-white/[0.02]">
+        <div class="border-t border-white/10 bg-white/[0.02] p-4">
           @if (!isBrowser()) {
             <div class="flex items-center gap-2 px-3 py-2">
-              <div class="h-2 w-2 rounded-full bg-amber-400 opacity-60"></div>
+              <div class="h-2 w-2 rounded-full bg-amber-400/80"></div>
               <span class="text-xs font-semibold text-white/40">SSR mode</span>
             </div>
           } @else {
             <div class="space-y-3">
               <a
                 routerLink="/login"
-                class="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-white/50 hover:text-white/70 transition-colors duration-200 rounded-xl hover:bg-white/5"
+                class="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold text-white/50 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white/70"
               >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  ></path>
                 </svg>
                 Switch account
               </a>
-              
+
               <button
                 (click)="signOut()"
                 [disabled]="isSigningOut()"
                 class="w-full btn-modern btn-secondary text-xs py-2"
               >
                 @if (isSigningOut()) {
-                  <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Signing out…
                 } @else {
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.5"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    ></path>
                   </svg>
                   Sign out
                 }
@@ -100,7 +108,7 @@ type NavItem = {
       </aside>
 
       <!-- Main content -->
-      <main class="flex-1 min-w-0">
+      <main class="min-w-0 flex-1">
         <div [class]="containerClass()">
           <router-outlet />
         </div>
@@ -132,10 +140,8 @@ export class AuthenticatedShellComponent {
   readonly isSigningOut = signal<boolean>(false);
 
   constructor(destroyRef: DestroyRef) {
-    // Initialize immediately
     this.currentUrl.set(this.router.url ?? '/');
 
-    // Keep updated on navigation
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -151,7 +157,12 @@ export class AuthenticatedShellComponent {
   }
 
   private isWideRoute(url: string): boolean {
-    return url.startsWith('/installations') || url.startsWith('/incidents') || url.startsWith('/players');
+    return (
+      url.startsWith('/installations') ||
+      url.startsWith('/incidents') ||
+      url.startsWith('/players') ||
+      url.startsWith('/dashboard')
+    );
   }
 
   async signOut(): Promise<void> {

@@ -68,6 +68,21 @@ body {
 
 /* Base component styles */
 @layer components {
+  /* Page title */
+  .page-title {
+    @apply text-2xl md:text-3xl font-extrabold tracking-tight text-white;
+  }
+
+  /* Enforce dark card surfaces for pantry cards */
+  ntv-card {
+    @apply bg-white/[0.02] border border-white/10 rounded-2xl;
+    box-shadow: var(--shadow-dark-sm);
+  }
+  ntv-card:hover {
+    @apply border-white/20 bg-white/[0.04];
+    box-shadow: var(--shadow-dark-md);
+  }
+
   /* Modern card */
   .card-modern {
     @apply bg-white/[0.02] border border-white/10 rounded-2xl backdrop-blur-sm;
@@ -161,135 +176,192 @@ body {
 
 /* -------------------------------------------------------------------------- */
 /* NTV Pantry dark overrides                                                   */
-/* (Pantry table + filter UI currently ships light-first hardcoded colors.)    */
+/* The app is dark-first, so keep these global instead of html.dark-scoped.    */
 /* -------------------------------------------------------------------------- */
 
-html.dark {
-  /* Table (ntv-table) */
-  ntv-table {
-    .table-container {
-      background: transparent !important;
-    }
-
-    .table-wrapper {
-      /* Remove “double border” feel inside our outer card */
-      border: 0 !important;
-      background: rgb(255 255 255 / 0.02) !important;
-    }
-
-    .table {
-      background: transparent !important;
-    }
-
-    thead {
-      background: rgb(255 255 255 / 0.04) !important;
-    }
-
-    thead th {
-      color: rgb(255 255 255 / 0.70) !important;
-      border-color: rgb(255 255 255 / 0.08) !important;
-    }
-
-    tbody tr {
-      border-color: rgb(255 255 255 / 0.08) !important;
-    }
-
-    tbody tr:hover {
-      background: rgb(255 255 255 / 0.04) !important;
-    }
-
-    tbody td {
-      color: rgb(255 255 255 / 0.78) !important;
-      border-color: rgb(255 255 255 / 0.06) !important;
-    }
-
-    /* Loading overlay (this is what causes the “white flash” on refresh) */
-    .table__loading-overlay {
-      background-color: rgb(0 0 0 / 0.65) !important;
-      backdrop-filter: blur(6px) !important;
-    }
-
-    .table__loading-content {
-      background: #0b0b0b !important;
-      border-color: rgb(255 255 255 / 0.12) !important;
-      box-shadow: var(--shadow-dark-lg) !important;
-    }
-
-    .table__loading-message {
-      color: rgb(255 255 255 / 0.80) !important;
-    }
-
-    .table__loading-spinner {
-      border-color: rgb(255 255 255 / 0.10) !important;
-      border-top-color: rgb(255 255 255 / 0.65) !important;
-    }
+/* Table (ntv-table) */
+ntv-table {
+  .table-container {
+    background: transparent !important;
   }
 
-  /* Column filter popup (ntv-column-filter) */
-  .filter-popup-content {
-    background: #0b0b0b !important;
-    border: 1px solid rgb(255 255 255 / 0.12) !important;
-    border-radius: 14px !important;
-    padding: 12px !important;
+  .table-wrapper {
+    border: 0 !important;
+    background: rgb(255 255 255 / 0.02) !important;
+    border-radius: 18px !important;
+    box-shadow: var(--shadow-dark-md) !important;
   }
 
-  .filter-popup-header {
-    border-bottom-color: rgb(255 255 255 / 0.12) !important;
+  .table {
+    background: transparent !important;
   }
 
-  .filter-popup-header span {
-    color: rgb(255 255 255 / 0.80) !important;
-  }
-
-  .filter-info {
-    color: rgb(255 255 255 / 0.55) !important;
-  }
-
-  .filter-popup-input,
-  .filter-popup-select {
+  thead {
     background: rgb(255 255 255 / 0.04) !important;
+  }
+
+  thead th {
+    color: rgb(255 255 255 / 0.7) !important;
+    border-color: rgb(255 255 255 / 0.08) !important;
+  }
+
+  tbody tr {
+    border-color: rgb(255 255 255 / 0.08) !important;
+  }
+
+  tbody tr:hover {
+    background: rgb(255 255 255 / 0.04) !important;
+  }
+
+  tbody td {
+    color: rgb(255 255 255 / 0.78) !important;
+    border-color: rgb(255 255 255 / 0.06) !important;
+  }
+
+  .table__loading-overlay {
+    background-color: rgb(0 0 0 / 0.65) !important;
+    backdrop-filter: blur(6px) !important;
+  }
+
+  .table__loading-content {
+    background: #0b0b0b !important;
     border-color: rgb(255 255 255 / 0.12) !important;
-    color: rgb(255 255 255 / 0.85) !important;
+    box-shadow: var(--shadow-dark-lg) !important;
   }
 
-  .filter-popup-input::placeholder {
-    color: rgb(255 255 255 / 0.40) !important;
+  .table__loading-message {
+    color: rgb(255 255 255 / 0.8) !important;
   }
 
-  .sort-btn-popup {
-    background: rgb(255 255 255 / 0.06) !important;
-    border: 1px solid rgb(255 255 255 / 0.12) !important;
-    color: rgb(255 255 255 / 0.85) !important;
+  .table__loading-spinner {
+    border-color: rgb(255 255 255 / 0.1) !important;
+    border-top-color: rgb(255 255 255 / 0.65) !important;
   }
+}
 
-  .sort-btn-popup:hover {
-    background: rgb(255 255 255 / 0.10) !important;
-  }
+/* Column filter popup (ntv-column-filter) */
+.filter-popup-content {
+  background: #0b0b0b !important;
+  border: 1px solid rgb(255 255 255 / 0.12) !important;
+  border-radius: 14px !important;
+  padding: 12px !important;
+  box-shadow: var(--shadow-dark-lg) !important;
+}
 
-  /* Clear Filter button -> icon-only “X” */
-  .clear-filter-btn {
-    position: relative !important;
-    width: 34px !important;
-    height: 34px !important;
-    padding: 0 !important;
-    border-radius: 9999px !important;
-    background: rgb(255 255 255 / 0.06) !important;
-    border: 1px solid rgb(255 255 255 / 0.12) !important;
-    color: transparent !important; /* keep text for a11y, hide visually */
-  }
+.filter-popup-header {
+  border-bottom-color: rgb(255 255 255 / 0.12) !important;
+}
 
-  .clear-filter-btn:hover {
-    background: rgb(255 255 255 / 0.10) !important;
-  }
+.filter-popup-header span {
+  color: rgb(255 255 255 / 0.8) !important;
+}
 
-  .clear-filter-btn::after {
-    content: '×';
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    font-size: 18px;
-    line-height: 1;
-    color: rgb(255 255 255 / 0.85);
-  }
+.filter-info {
+  color: rgb(255 255 255 / 0.55) !important;
+}
+
+.filter-popup-input,
+.filter-popup-select {
+  background: rgb(255 255 255 / 0.04) !important;
+  border-color: rgb(255 255 255 / 0.12) !important;
+  color: rgb(255 255 255 / 0.85) !important;
+  border-radius: 10px !important;
+}
+
+.filter-popup-input::placeholder {
+  color: rgb(255 255 255 / 0.4) !important;
+}
+
+.sort-btn-popup {
+  background: rgb(255 255 255 / 0.06) !important;
+  border: 1px solid rgb(255 255 255 / 0.12) !important;
+  color: rgb(255 255 255 / 0.85) !important;
+  border-radius: 10px !important;
+}
+
+.sort-btn-popup:hover {
+  background: rgb(255 255 255 / 0.1) !important;
+}
+
+/* Clear Filter button -> icon-only X */
+.clear-filter-btn {
+  position: relative !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  background: rgb(255 255 255 / 0.06) !important;
+  border: 1px solid rgb(255 255 255 / 0.12) !important;
+  color: transparent !important;
+}
+
+.clear-filter-btn:hover {
+  background: rgb(255 255 255 / 0.1) !important;
+  border-color: rgb(255 255 255 / 0.2) !important;
+}
+
+.clear-filter-btn::after {
+  content: '×';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+  color: rgb(255 255 255 / 0.85);
+}
+
+/* Buttons */
+ntv-button button,
+ntv-button .button,
+ntv-button [type='button'] {
+  background: rgb(255 255 255 / 0.08) !important;
+  color: rgb(255 255 255 / 0.92) !important;
+  border: 1px solid rgb(255 255 255 / 0.14) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease),
+    border-color var(--motion-duration-fast) var(--motion-ease),
+    color var(--motion-duration-fast) var(--motion-ease),
+    transform var(--motion-duration-fast) var(--motion-ease) !important;
+}
+
+ntv-button button:hover,
+ntv-button .button:hover,
+ntv-button [type='button']:hover {
+  background: rgb(255 255 255 / 0.14) !important;
+  color: rgb(255 255 255 / 0.98) !important;
+  border-color: rgb(255 255 255 / 0.22) !important;
+  transform: translateY(-1px);
+}
+
+ntv-button button:focus-visible,
+ntv-button .button:focus-visible,
+ntv-button [type='button']:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.12) !important;
+}
+
+ntv-button button:disabled,
+ntv-button .button:disabled,
+ntv-button [type='button']:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Cards */
+ntv-card .card,
+ntv-card .card-container,
+ntv-card .card-wrapper {
+  background: rgb(255 255 255 / 0.02) !important;
+  border: 1px solid rgb(255 255 255 / 0.1) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--shadow-dark-md) !important;
+}
+
+/* Generic link hover cleanup */
+a:hover {
+  color: rgb(255 255 255 / 0.96);
 }

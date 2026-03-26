@@ -1,40 +1,32 @@
 /** Angular Imports */
-import { inject } from '@angular/core';
-import { CanMatchFn, Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { CanMatchFn, Router, UrlTree } from '@angular/router';
 
 /** Local Imports */
-import { AuthService } from '../../services/auth/auth.service';
+import { SupabaseService } from '../../supabase/supabase.service';
 
-/**
- * Route guard that allows access only to authenticated users.
- *
- * @param route - The activated route snapshot
- * @param segments - The URL segments
- * @returns {boolean} True if user is authenticated, otherwise redirects to login
- *
- * @remarks
- * This is a functional guard (Angular 15+) used with `canMatch`.
- * Redirects unauthenticated users to /login.
- */
-export const authGuard: CanMatchFn = (route, segments) => {
-    /**
-     * Authentication service instance
-     * @type {AuthService}
-     */
-    const authService: AuthService = inject(AuthService);
+export const authGuard: CanMatchFn = async (): Promise<boolean | UrlTree> => {
+  const platformId = inject(PLATFORM_ID);
+  const router = inject(Router);
 
-    /**
-     * Router service for navigation
-     * @type {Router}
-     */
-    const router: Router = inject(Router);
+  // During SSR, the browser Supabase client is not available.
+  // Allow the route to match and let client-side auth + RLS enforce access after hydration.
+  if (!isPlatformBrowser(platformId)) {
+    return true;
+  }
 
-    const isAuthenticated = authService.checkAuthStatus();
+  const supabase = inject(SupabaseService);
 
-    if (!isAuthenticated) {
-        router.navigate(['/login']);
-        return false;
+  try {
+    const { data, error } = await supabase.client().auth.getSession();
+
+    if (error || !data.session) {
+      return router.createUrlTree(['/login']);
     }
 
     return true;
+  } catch {
+    return router.createUrlTree(['/login']);
+  }
 };

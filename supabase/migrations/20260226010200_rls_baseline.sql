@@ -33,6 +33,9 @@ as $$
   );
 $$;
 
+revoke all on function public.has_any_role(text[]) from public;
+grant execute on function public.has_any_role(text[]) to authenticated;
+
 -- profiles policies:
 -- Users can read ONLY their own profile row (no insert/update/delete from client).
 drop policy if exists "profiles_read_own" on public.profiles;

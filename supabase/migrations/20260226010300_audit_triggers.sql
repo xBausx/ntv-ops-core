@@ -37,9 +37,27 @@ language plpgsql
 as $$
 declare
   now_ts timestamptz := now();
+  jwt_role text := auth.role();
+  is_privileged_backend boolean := jwt_role = 'service_role';
 begin
+  -- Prevent direct client-side manipulation of privileged system fields.
+  if not is_privileged_backend then
+    if new.verified_at is distinct from old.verified_at then
+      raise exception 'verified_at may only be set by privileged backend operations';
+    end if;
+
+    if new.closed_at is distinct from old.closed_at then
+      raise exception 'closed_at may only be set by privileged backend operations';
+    end if;
+  end if;
+
   -- Only act when status changes
   if new.status is distinct from old.status then
+
+    -- VERIFIED and CLOSED are privileged transitions.
+    if not is_privileged_backend and new.status in ('VERIFIED', 'CLOSED') then
+      raise exception 'status transition to % requires a privileged backend operation', new.status;
+    end if;
 
     -- Stamp verified_at when entering VERIFIED (only if not already set)
     if new.status = 'VERIFIED' and new.verified_at is null then

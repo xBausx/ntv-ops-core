@@ -45,6 +45,11 @@ for each row execute function public.set_updated_at();
 create index idx_players_hostname on public.players (hostname);
 create index idx_players_site_alias on public.players (site_alias);
 create index idx_players_dealer_alias on public.players (dealer_alias);
+
+create index idx_players_hostname_lower on public.players (lower(hostname));
+create index idx_players_site_alias_lower on public.players (lower(site_alias));
+create index idx_players_dealer_alias_lower on public.players (lower(dealer_alias));
+
 create index idx_players_tags_gin on public.players using gin (tags);
 
 -- =========================
@@ -81,7 +86,16 @@ create table public.work_items (
     check (status in ('NEW', 'SCHEDULED', 'IN_PROGRESS', 'BLOCKED', 'VERIFIED', 'CLOSED')),
 
   constraint ck_work_items_priority_range
-    check (priority between 1 and 5)
+    check (priority between 1 and 5),
+
+  constraint ck_work_items_blocked_reason_required
+    check (status <> 'BLOCKED' or blocked_reason_code is not null),
+
+  constraint ck_work_items_verified_at_required
+    check (status <> 'VERIFIED' or verified_at is not null),
+
+  constraint ck_work_items_closed_at_required
+    check (status <> 'CLOSED' or closed_at is not null)
 );
 
 create trigger trg_work_items_set_updated_at
@@ -155,6 +169,14 @@ create table public.external_refs (
 -- Ensure external mappings are unique per system
 create unique index ux_external_refs_system_external_id
 on public.external_refs (system, external_id);
+
+create unique index ux_external_refs_license_uuid_dashboard
+on public.external_refs (license_uuid, system)
+where license_uuid is not null and system = 'DASHBOARD';
+
+create unique index ux_external_refs_license_uuid_meshcentral
+on public.external_refs (license_uuid, system)
+where license_uuid is not null and system = 'MESHCENTRAL';
 
 create index idx_external_refs_license_uuid on public.external_refs (license_uuid);
 create index idx_external_refs_work_id on public.external_refs (work_id);

@@ -7,36 +7,11 @@ import { Button, Card, Table } from '@ntv360/component-pantry';
 
 /** Local Imports */
 import { SupabaseService, SwrCacheService } from '@core';
-
-type PlayerRow = {
-  license_uuid: string;
-
-  hostname: string | null;
-  dealer_alias: string | null;
-  site_alias: string | null;
-  license_type: string | null;
-  screen: string | null;
-
-  dashboard_url: string | null;
-
-  mesh_device_id: string | null;
-  mesh_url: string | null;
-
-  tags: string[] | null;
-};
-
-type PlayerTableRow = PlayerRow & {
-  tags_display: string;
-};
-
-type CacheState = {
-  rows: PlayerRow[];
-  currentPage: number;
-  hasMore: boolean;
-  userEmail: string;
-  userId: string;
-  userRole: string;
-};
+import {
+  type PlayerCacheState,
+  type PlayerRow,
+  type PlayerTableRow,
+} from './models/player.models';
 
 @Component({
   selector: 'app-players-page',
@@ -45,16 +20,17 @@ type CacheState = {
   template: `
     <section class="space-y-6">
       <!-- Header -->
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Players</h1>
-          <p class="mt-1 text-sm text-white/60">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <h1 class="page-title">Players</h1>
+          <p class="mt-1 max-w-3xl text-sm text-white/60">
             Search player mappings (license UUID → hostname/site/dealer + deep links to Dashboard/MeshCentral).
           </p>
 
           @if (lastUpdatedLabel()) {
-            <div class="mt-2 text-xs font-semibold text-white/40">
-              Last updated: <span class="text-white/60">{{ lastUpdatedLabel() }}</span>
+            <div class="mt-2 inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-white/45">
+              <span>Last updated:</span>
+              <span class="ml-1 text-white/65">{{ lastUpdatedLabel() }}</span>
               @if (isRevalidating()) {
                 <span class="ml-2 text-white/30">(refreshing…)</span>
               }
@@ -62,7 +38,7 @@ type CacheState = {
           }
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <ntv-button (click)="refreshHard()" [disabled]="isLoading() || !isBrowser()">
             Refresh
           </ntv-button>
@@ -71,24 +47,29 @@ type CacheState = {
 
       <!-- Search -->
       <ntv-card>
-        <div class="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-3">
-          <div class="flex-1">
-            <label class="block text-xs font-bold text-white/60 mb-1">Search</label>
-            <input
-              class="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
-              placeholder="Search license UUID, hostname, site, dealer, tags…"
-              [value]="searchText()"
-              (input)="onSearchInput($event)"
-            />
-          </div>
+        <div class="p-4 md:p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="min-w-0 flex-1">
+              <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Search</label>
+              <input
+                class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                placeholder="Search license UUID, hostname, site, dealer, tags…"
+                [value]="searchText()"
+                (input)="onSearchInput($event)"
+              />
+            </div>
 
-          <div class="flex items-center gap-2">
-            <button
-              class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition"
-              (click)="onClear()"
-            >
-              Clear
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Clear search"
+                title="Clear search"
+                class="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] transition hover:bg-white/[0.12] hover:border-white/20"
+                (click)="onClear()"
+              >
+                <span class="text-xl leading-none text-white/80">×</span>
+              </button>
+            </div>
           </div>
         </div>
       </ntv-card>
@@ -181,6 +162,34 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 >
                 </ntv-table>
 
+                <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div class="flex items-center justify-between gap-4">
+                    <div>
+                      <p class="text-sm font-bold text-white/70">Open Player Profile</p>
+                      <p class="mt-1 text-sm text-white/60">
+                        Use these quick links to open the canonical player profile with Dashboard, MeshCentral, and associated work.
+                      </p>
+                    </div>
+
+                    @if (filteredTableRows().length > profileLinkRows().length) {
+                      <div class="text-xs font-semibold text-white/40">
+                        Showing first {{ profileLinkRows().length }} matches
+                      </div>
+                    }
+                  </div>
+
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    @for (player of profileLinkRows(); track player.license_uuid) {
+                      <a
+                        [routerLink]="['/players', player.license_uuid]"
+                        class="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition"
+                      >
+                        {{ player.hostname || player.license_uuid }}
+                      </a>
+                    }
+                  </div>
+                </div>
+
                 @if (!hasMore() && rows().length > 0) {
                   <div class="mt-3 text-xs font-semibold text-white/40">
                     All rows loaded.
@@ -242,6 +251,8 @@ export class PlayersPageComponent {
     return all.filter((p) => this.matches(p, q));
   });
 
+  readonly profileLinkRows = computed(() => this.filteredTableRows().slice(0, 12));
+
   readonly columns = signal<any[]>([
     { field: 'hostname', header: 'Hostname', visible: true, filter: true, filterType: 'text', width: '220px' },
     { field: 'site_alias', header: 'Site', visible: true, filter: true, filterType: 'text', width: '180px' },
@@ -263,7 +274,7 @@ export class PlayersPageComponent {
 
   private async initLoad(): Promise<void> {
     // 1) Hydrate from cache (instant)
-    const cached = this.swr.read<CacheState>(this.cacheKey);
+    const cached = this.swr.read<PlayerCacheState>(this.cacheKey);
     if (cached) {
       this.rows.set(cached.rows ?? []);
       this.currentPage.set(cached.currentPage ?? 1);
@@ -316,7 +327,7 @@ export class PlayersPageComponent {
     try {
       const nextPage = append ? this.currentPage() + 1 : 1;
 
-      const state = await this.swr.revalidate<CacheState>(this.cacheKey, async () => {
+      const state = await this.swr.revalidate<PlayerCacheState>(this.cacheKey, async () => {
         const baseRows = append ? this.rows() : [];
         const basePage = append ? this.currentPage() : 0;
 
@@ -336,7 +347,7 @@ export class PlayersPageComponent {
       this.currentPage.set(state.currentPage);
       this.hasMore.set(state.hasMore);
 
-      this.swr.write<CacheState>(this.cacheKey, {
+      this.swr.write<PlayerCacheState>(this.cacheKey, {
         ...state,
         userEmail: this.userEmail(),
         userId: this.userId(),

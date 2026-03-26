@@ -7,52 +7,13 @@ import { Button, Card, Table } from '@ntv360/component-pantry';
 
 /** Local Imports */
 import { SupabaseService, SwrCacheService } from '@core';
-
-type IncidentQueueRow = {
-  work_id: string;
-  type: 'INCIDENT';
-  status: string;
-  priority: number;
-  assignee_user_id: string | null;
-
-  scheduled_for: string | null;
-  sla_due: string | null;
-
-  summary: string;
-  description: string | null;
-
-  blocked_reason_code: string | null;
-  blocked_reason_detail: string | null;
-
-  verified_at: string | null;
-  closed_at: string | null;
-
-  created_at: string;
-  updated_at: string;
-
-  player_count: number;
-  license_uuids: string[] | null;
-  hostnames: string[] | null;
-  site_aliases: string[] | null;
-  dealer_aliases: string[] | null;
-};
-
-type IncidentQueueTableRow = IncidentQueueRow & {
-  hostnames_display: string;
-  site_display: string;
-  dealer_display: string;
-};
-
-const STATUSES = ['NEW', 'SCHEDULED', 'IN_PROGRESS', 'BLOCKED', 'VERIFIED', 'CLOSED'] as const;
-
-type CacheState = {
-  rows: IncidentQueueRow[];
-  currentPage: number;
-  hasMore: boolean;
-  userEmail: string;
-  userId: string;
-  userRole: string;
-};
+import {
+  CLIENT_CREATABLE_INCIDENT_STATUSES,
+  INCIDENT_WORK_STATUSES,
+  type IncidentCacheState,
+  type IncidentQueueRow,
+  type IncidentQueueTableRow,
+} from './models/incidents.models';
 
 @Component({
   selector: 'app-incidents-page',
@@ -61,16 +22,17 @@ type CacheState = {
   template: `
     <section class="space-y-6">
       <!-- Header -->
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Incident Queue</h1>
-          <p class="mt-1 text-sm text-white/60">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <h1 class=\"page-title\">Incident Queue</h1>
+          <p class="mt-1 max-w-3xl text-sm text-white/60">
             Track incidents/support work with strict statuses and audit history.
           </p>
 
           @if (lastUpdatedLabel()) {
-            <div class="mt-2 text-xs font-semibold text-white/40">
-              Last updated: <span class="text-white/60">{{ lastUpdatedLabel() }}</span>
+            <div class="mt-2 inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-white/45">
+              <span>Last updated:</span>
+              <span class="ml-1 text-white/65">{{ lastUpdatedLabel() }}</span>
               @if (isRevalidating()) {
                 <span class="ml-2 text-white/30">(refreshing…)</span>
               }
@@ -78,9 +40,9 @@ type CacheState = {
           }
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <button
-            class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition disabled:opacity-50"
+            class="inline-flex items-center justify-center rounded-xl border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:bg-white/[0.14] hover:text-white hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50"
             (click)="openCreate()"
             [disabled]="!isBrowser() || !isWritable()"
           >
@@ -95,36 +57,37 @@ type CacheState = {
 
       <!-- Filters -->
       <ntv-card>
-        <div class="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-3">
-          <div class="flex-1">
-            <label class="block text-xs font-bold text-white/60 mb-1">Search</label>
-            <input
-              class="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
-              placeholder="Search summary, hostname, site, dealer, license UUID…"
-              [value]="searchText()"
-              (input)="onSearchInput($event)"
-            />
-          </div>
+        <div class="p-4 md:p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="min-w-0 flex-1">
+              <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Search</label>
+              <input
+                class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                placeholder="Search summary, hostname, site, dealer, license UUID…"
+                [value]="searchText()"
+                (input)="onSearchInput($event)"
+              />
+            </div>
 
-          <div class="flex items-center gap-2">
-            <!-- Clear (X) -->
-            <button
-              type="button"
-              aria-label="Clear search"
-              title="Clear search"
-              class="h-10 w-10 grid place-items-center rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition"
-              (click)="onClear()"
-            >
-              <span class="text-xl leading-none text-white/80">×</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Clear search"
+                title="Clear search"
+                class="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] transition hover:bg-white/[0.12] hover:border-white/20"
+                (click)="onClear()"
+              >
+                <span class="text-xl leading-none text-white/80">×</span>
+              </button>
 
-            <button
-              class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition disabled:opacity-50"
-              (click)="onExport()"
-              [disabled]="filteredTableRows().length === 0"
-            >
-              Export
-            </button>
+              <button
+                class="inline-flex items-center justify-center rounded-xl border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:bg-white/[0.14] hover:text-white hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                (click)="onExport()"
+                [disabled]="filteredTableRows().length === 0"
+              >
+                Export
+              </button>
+            </div>
           </div>
         </div>
       </ntv-card>
@@ -325,7 +288,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                     [value]="createStatus()"
                     (change)="onCreateStatus($event)"
                   >
-                    @for (s of statuses(); track s) {
+                    @for (s of createStatuses(); track s) {
                       <option [value]="s">{{ s }}</option>
                     }
                   </select>
@@ -462,10 +425,10 @@ export class IncidentsPageComponent {
     return all.filter((r) => this.matches(r, q));
   });
 
-  readonly statuses = signal<string[]>([...STATUSES]);
+  readonly createStatuses = signal<string[]>([...CLIENT_CREATABLE_INCIDENT_STATUSES]);
 
   readonly columns = signal<any[]>([
-    { field: 'status', header: 'Status', visible: true, width: '140px', filter: true, type: 'select', options: [...STATUSES] },
+    { field: 'status', header: 'Status', visible: true, width: '140px', filter: true, type: 'select', options: [...INCIDENT_WORK_STATUSES] },
     { field: 'priority', header: 'P', visible: true, width: '70px', filter: true, type: 'number' },
     { field: 'summary', header: 'Summary', visible: true, filter: true, filterType: 'text' },
     { field: 'hostnames_display', header: 'Hostnames', visible: true, width: '260px', filter: true, filterType: 'text' },
@@ -498,7 +461,7 @@ export class IncidentsPageComponent {
   }
 
   private async initLoad(): Promise<void> {
-    const cached = this.swr.read<CacheState>(this.cacheKey);
+    const cached = this.swr.read<IncidentCacheState>(this.cacheKey);
     if (cached) {
       this.rows.set(cached.rows ?? []);
       this.currentPage.set(cached.currentPage ?? 1);
@@ -551,7 +514,7 @@ export class IncidentsPageComponent {
     try {
       const nextPage = append ? this.currentPage() + 1 : 1;
 
-      const state = await this.swr.revalidate<CacheState>(this.cacheKey, async () => {
+      const state = await this.swr.revalidate<IncidentCacheState>(this.cacheKey, async () => {
         if (append) {
           const baseRows = this.rows();
           const basePage = this.currentPage();
@@ -595,7 +558,7 @@ export class IncidentsPageComponent {
       this.currentPage.set(state.currentPage);
       this.hasMore.set(state.hasMore);
 
-      this.swr.write<CacheState>(this.cacheKey, {
+      this.swr.write<IncidentCacheState>(this.cacheKey, {
         ...state,
         userEmail: this.userEmail(),
         userId: this.userId(),
@@ -762,6 +725,14 @@ export class IncidentsPageComponent {
       const client = this.supabase.client();
 
       const status = this.createStatus();
+
+      if (status === 'VERIFIED' || status === 'CLOSED') {
+        this.createError.set(
+          `${status} must be created by a privileged backend operation. Start the work item in a client-allowed status instead.`,
+        );
+        return;
+      }
+
       const scheduledLocal = this.createScheduledFor().trim();
       const scheduledForIso = scheduledLocal ? new Date(scheduledLocal).toISOString() : null;
 
