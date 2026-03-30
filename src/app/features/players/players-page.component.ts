@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /** Third Party Imports */
-import { Button, Card, Table } from '@ntv360/component-pantry';
+import { Table } from '@ntv360/component-pantry';
 
 /** Local Imports */
 import { SupabaseService, SwrCacheService } from '@core';
@@ -16,7 +16,7 @@ import {
 @Component({
   selector: 'app-players-page',
   standalone: true,
-  imports: [Card, Button, Table, RouterLink],
+  imports: [Table, RouterLink],
   template: `
     <section class="space-y-6">
       <!-- Header -->
@@ -39,20 +39,20 @@ import {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <ntv-button (click)="refreshHard()" [disabled]="isLoading() || !isBrowser()">
+          <button class="btn-modern btn-secondary" (click)="refreshHard()" [disabled]="isLoading() || !isBrowser()">
             Refresh
-          </ntv-button>
+          </button>
         </div>
       </div>
 
       <!-- Search -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div class="min-w-0 flex-1">
               <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Search</label>
               <input
-                class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                class="input-modern w-full"
                 placeholder="Search license UUID, hostname, site, dealer, tags…"
                 [value]="searchText()"
                 (input)="onSearchInput($event)"
@@ -64,18 +64,18 @@ import {
                 type="button"
                 aria-label="Clear search"
                 title="Clear search"
-                class="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] transition hover:bg-white/[0.12] hover:border-white/20"
+                class="icon-button-modern"
                 (click)="onClear()"
               >
-                <span class="text-xl leading-none text-white/80">×</span>
+                <span class="text-xl leading-none">×</span>
               </button>
             </div>
           </div>
         </div>
-      </ntv-card>
+      </div>
 
       <!-- Results -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="flex items-center justify-between gap-4">
             <div class="text-sm font-bold text-white/70">
@@ -151,6 +151,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               </div>
             } @else if (filteredTableRows().length > 0) {
               <div class="mt-4">
+                <div class="table-shell">
                 <ntv-table
                   [columns]="columns()"
                   [value]="filteredTableRows()"
@@ -161,8 +162,9 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                   (showMoreRequested)="onLoadMore()"
                 >
                 </ntv-table>
+                </div>
 
-                <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div class="mt-4 panel-modern">
                   <div class="flex items-center justify-between gap-4">
                     <div>
                       <p class="text-sm font-bold text-white/70">Open Player Profile</p>
@@ -182,7 +184,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                     @for (player of profileLinkRows(); track player.license_uuid) {
                       <a
                         [routerLink]="['/players', player.license_uuid]"
-                        class="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition"
+                        class="btn-modern btn-secondary"
                       >
                         {{ player.hostname || player.license_uuid }}
                       </a>
@@ -199,7 +201,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
             }
           }
         </div>
-      </ntv-card>
+      </div>
     </section>
   `,
 })

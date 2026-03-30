@@ -8,19 +8,27 @@ import { Button, Card } from '@ntv360/component-pantry';
 /** Local Imports */
 import { SupabaseService } from '@core';
 
+type SeedAccount = {
+  label: string;
+  email: string;
+  password: string;
+  role: 'ADMIN' | 'OPS' | 'READ_ONLY';
+};
+
 @Component({
   selector: 'app-login-page',
   standalone: true,
   imports: [Card, Button],
   template: `
     <div class="flex min-h-[calc(100vh-3rem)] items-center justify-center">
-      <div class="w-full max-w-md">
+      <div class="w-full max-w-2xl">
         <ntv-card>
           <div class="space-y-6 p-6 md:p-7">
             <div>
               <div class="text-2xl font-extrabold tracking-tight text-white">Sign in</div>
-              <div class="mt-1 max-w-md text-sm text-white/60">
-                Ops Core uses Supabase Auth + RLS. You must sign in to load queues.
+              <div class="mt-1 max-w-2xl text-sm text-white/60">
+                Ops Core uses Supabase Auth + RLS. Reset the local database once, then sign in with one of the seeded
+                accounts below.
               </div>
             </div>
 
@@ -30,11 +38,29 @@ import { SupabaseService } from '@core';
                 <p class="mt-1 text-sm text-white/60">Sign-in runs in the browser only.</p>
               </div>
             } @else {
+              <div class="grid gap-3 md:grid-cols-3">
+                @for (account of seedAccounts; track account.email) {
+                  <button
+                    type="button"
+                    class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.08]"
+                    (click)="useSeedAccount(account)"
+                  >
+                    <div class="text-xs font-bold uppercase tracking-[0.2em] text-white/40">{{ account.role }}</div>
+                    <div class="mt-2 text-sm font-semibold text-white/80">{{ account.label }}</div>
+                    <div class="mt-3 space-y-1 text-sm text-white/60">
+                      <div>{{ account.email }}</div>
+                      <div>Password: {{ account.password }}</div>
+                    </div>
+                    <div class="mt-4 text-xs font-semibold text-white/40">Click to fill the form</div>
+                  </button>
+                }
+              </div>
+
               <div class="space-y-4">
                 <div>
                   <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Email</label>
                   <input
-                    class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                    class="input-modern w-full text-white"
                     placeholder="you@ntv360.com"
                     [value]="email()"
                     (input)="onEmail($event)"
@@ -45,7 +71,7 @@ import { SupabaseService } from '@core';
                 <div>
                   <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Password</label>
                   <input
-                    class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                    class="input-modern w-full text-white"
                     placeholder="••••••••"
                     type="password"
                     [value]="password()"
@@ -73,15 +99,19 @@ import { SupabaseService } from '@core';
                   </ntv-button>
                 </div>
 
-                <div class="mt-1 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                  <div class="text-xs font-bold uppercase tracking-wide text-white/45">Dev note</div>
-                  <div class="mt-2 text-sm text-white/60">
-                    After signing in, if queues show “permission denied”, your user likely has no role row in
-                    <span class="font-semibold text-white/75">public.profiles</span>.
-                    Add one in Supabase Studio SQL:
+                <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-xs font-bold uppercase tracking-wide text-white/45">Local dev flow</div>
+                  <div class="mt-2 space-y-2 text-sm text-white/60">
+                    <p>Run <span class="font-semibold text-white/75">npm run db:reset</span> once to seed local auth, roles, players, queues, and work history.</p>
+                    <p>
+                      If you just enabled seeding, restart the local Supabase stack so the updated
+                      <span class="font-semibold text-white/75">supabase/config.toml</span> is applied.
+                    </p>
+                    <p>
+                      Self-signup is still enabled for ad hoc testing, but newly created users will remain unprovisioned
+                      until you add a matching <span class="font-semibold text-white/75">public.profiles</span> row.
+                    </p>
                   </div>
-                  <pre class="mt-3 overflow-auto rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white/70"><code>insert into public.profiles (user_id, role)
-values ('&lt;your-auth-users-id-uuid&gt;', 'ADMIN');</code></pre>
                 </div>
               </div>
             }
@@ -95,10 +125,31 @@ export class LoginPageComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
 
-  readonly email = signal<string>('');
-  readonly password = signal<string>('');
+  readonly email = signal<string>('admin@ntv360.local');
+  readonly password = signal<string>('OpsCore123');
   readonly errorText = signal<string>('');
   readonly isLoading = signal<boolean>(false);
+
+  readonly seedAccounts: SeedAccount[] = [
+    {
+      label: 'Local Admin',
+      email: 'admin@ntv360.local',
+      password: 'OpsCore123',
+      role: 'ADMIN',
+    },
+    {
+      label: 'Local Ops',
+      email: 'ops@ntv360.local',
+      password: 'OpsCore123',
+      role: 'OPS',
+    },
+    {
+      label: 'Local Read Only',
+      email: 'readonly@ntv360.local',
+      password: 'OpsCore123',
+      role: 'READ_ONLY',
+    },
+  ];
 
   isBrowser(): boolean {
     return this.supabase.isBrowser();
@@ -106,6 +157,12 @@ export class LoginPageComponent {
 
   canSubmit(): boolean {
     return this.email().trim().length > 0 && this.password().trim().length > 0;
+  }
+
+  useSeedAccount(account: SeedAccount): void {
+    this.errorText.set('');
+    this.email.set(account.email);
+    this.password.set(account.password);
   }
 
   onEmail(event: Event): void {

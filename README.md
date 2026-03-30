@@ -72,11 +72,19 @@ Stop local Supabase:
 npm run db:stop
 ~~~
 
-Reset DB with a fresh schema:
+Reset DB with a fresh schema and seed data:
 
 ~~~bash
 npm run db:reset
 ~~~
+
+Seeded local accounts after reset:
+
+- `admin@ntv360.local` / `OpsCore123` (`ADMIN`)
+- `ops@ntv360.local` / `OpsCore123` (`OPS`)
+- `readonly@ntv360.local` / `OpsCore123` (`READ_ONLY`)
+
+If you just changed `supabase/config.toml`, restart the local Supabase stack once so the seed setting is applied.
 
 Apply migrations without reset:
 

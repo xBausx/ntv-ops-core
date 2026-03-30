@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /** Third Party Imports */
-import { Button, Card, Table } from '@ntv360/component-pantry';
+import { Table } from '@ntv360/component-pantry';
 
 /** Local Imports */
 import { SupabaseService, SwrCacheService } from '@core';
@@ -18,7 +18,7 @@ import {
 @Component({
   selector: 'app-incidents-page',
   standalone: true,
-  imports: [Card, Button, Table, RouterLink],
+  imports: [Table, RouterLink],
   template: `
     <section class="space-y-6">
       <!-- Header -->
@@ -42,27 +42,27 @@ import {
 
         <div class="flex flex-wrap items-center gap-2">
           <button
-            class="inline-flex items-center justify-center rounded-xl border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:bg-white/[0.14] hover:text-white hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+            class="btn-modern btn-secondary"
             (click)="openCreate()"
             [disabled]="!isBrowser() || !isWritable()"
           >
             New incident
           </button>
 
-          <ntv-button (click)="refreshHard()" [disabled]="isLoading() || !isBrowser()">
+          <button class="btn-modern btn-secondary" (click)="refreshHard()" [disabled]="isLoading() || !isBrowser()">
             Refresh
-          </ntv-button>
+          </button>
         </div>
       </div>
 
       <!-- Filters -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div class="min-w-0 flex-1">
               <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Search</label>
               <input
-                class="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/20 focus:bg-white/[0.06]"
+                class="input-modern w-full"
                 placeholder="Search summary, hostname, site, dealer, license UUID…"
                 [value]="searchText()"
                 (input)="onSearchInput($event)"
@@ -74,14 +74,14 @@ import {
                 type="button"
                 aria-label="Clear search"
                 title="Clear search"
-                class="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] transition hover:bg-white/[0.12] hover:border-white/20"
+                class="icon-button-modern"
                 (click)="onClear()"
               >
-                <span class="text-xl leading-none text-white/80">×</span>
+                <span class="text-xl leading-none">×</span>
               </button>
 
               <button
-                class="inline-flex items-center justify-center rounded-xl border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:bg-white/[0.14] hover:text-white hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                class="btn-modern btn-secondary"
                 (click)="onExport()"
                 [disabled]="filteredTableRows().length === 0"
               >
@@ -90,10 +90,10 @@ import {
             </div>
           </div>
         </div>
-      </ntv-card>
+      </div>
 
       <!-- Queue -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="flex items-center justify-between gap-4">
             <div class="text-sm font-bold text-white/70">
@@ -169,6 +169,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               </div>
             } @else if (filteredTableRows().length > 0) {
               <div class="mt-4">
+                <div class="table-shell">
                 @if (tableMounted()) {
                   <ntv-table
                     [columns]="columns()"
@@ -200,7 +201,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
 
                           <div class="flex items-center gap-2">
                             <a
-                              class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition"
+                              class="btn-modern btn-secondary"
                               [routerLink]="['/work', row.work_id]"
                             >
                               Open
@@ -211,6 +212,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                     </ng-template>
                   </ntv-table>
                 }
+                </div>
 
                 @if (!hasMore() && rows().length > 0) {
                   <div class="mt-3 text-xs font-semibold text-white/40">
@@ -221,7 +223,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
             }
           }
         </div>
-      </ntv-card>
+      </div>
     </section>
 
     <!-- Create modal -->
@@ -230,7 +232,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
         <div class="absolute inset-0 bg-black/70" (click)="closeCreate()"></div>
 
         <div class="absolute inset-0 flex items-center justify-center p-4">
-          <div class="w-full max-w-xl rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl">
+          <div class="card-modern w-full max-w-xl bg-neutral-950 shadow-2xl">
             <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
               <div>
                 <div class="text-lg font-extrabold tracking-tight">New incident</div>
@@ -240,7 +242,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               </div>
 
               <button
-                class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition"
+                class="btn-modern btn-secondary"
                 (click)="closeCreate()"
               >
                 Close
@@ -258,7 +260,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               <div>
                 <label class="block text-xs font-bold text-white/60 mb-1">Summary *</label>
                 <input
-                  class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                  class="input-modern w-full"
                   placeholder="e.g. Player offline at Site XYZ"
                   [value]="createSummary()"
                   (input)="onCreateSummary($event)"
@@ -269,7 +271,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 <div>
                   <label class="block text-xs font-bold text-white/60 mb-1">Priority</label>
                   <select
-                    class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                    class="input-modern w-full"
                     [value]="createPriority()"
                     (change)="onCreatePriority($event)"
                   >
@@ -284,7 +286,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 <div>
                   <label class="block text-xs font-bold text-white/60 mb-1">Status</label>
                   <select
-                    class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                    class="input-modern w-full"
                     [value]="createStatus()"
                     (change)="onCreateStatus($event)"
                   >
@@ -298,7 +300,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                   <label class="block text-xs font-bold text-white/60 mb-1">Scheduled for</label>
                   <input
                     type="datetime-local"
-                    class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                    class="input-modern w-full"
                     [value]="createScheduledFor()"
                     (input)="onCreateScheduledFor($event)"
                   />
@@ -308,7 +310,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               <div>
                 <label class="block text-xs font-bold text-white/60 mb-1">Description</label>
                 <textarea
-                  class="w-full min-h-[96px] rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                  class="input-modern min-h-[96px] w-full resize-y"
                   placeholder="Optional details…"
                   [value]="createDescription()"
                   (input)="onCreateDescription($event)"
@@ -320,7 +322,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                   <div>
                     <label class="block text-xs font-bold text-white/60 mb-1">Blocked reason code</label>
                     <input
-                      class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                      class="input-modern w-full"
                       placeholder="e.g. WAITING_ON_VENDOR"
                       [value]="createBlockedCode()"
                       (input)="onCreateBlockedCode($event)"
@@ -330,7 +332,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                   <div>
                     <label class="block text-xs font-bold text-white/60 mb-1">Blocked details</label>
                     <input
-                      class="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/20"
+                      class="input-modern w-full"
                       placeholder="Explain what’s blocking…"
                       [value]="createBlockedDetail()"
                       (input)="onCreateBlockedDetail($event)"
@@ -341,19 +343,20 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
 
               <div class="flex items-center justify-end gap-2 pt-2">
                 <button
-                  class="rounded-xl px-3 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition disabled:opacity-50"
+                  class="btn-modern btn-secondary disabled:opacity-50"
                   (click)="resetCreate()"
                   [disabled]="isCreating()"
                 >
                   Reset
                 </button>
 
-                <ntv-button
+                <button
+                  class="btn-modern btn-primary"
                   (click)="createWorkItem()"
                   [disabled]="isCreating() || !isWritable() || createSummary().trim().length === 0"
                 >
                   @if (isCreating()) { Creating… } @else { Create }
-                </ntv-button>
+                </button>
               </div>
 
               @if (!isWritable()) {

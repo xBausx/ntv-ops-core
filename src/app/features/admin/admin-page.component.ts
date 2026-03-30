@@ -2,16 +2,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-/** Third Party Imports */
-import { Button, Card } from '@ntv360/component-pantry';
-
 /** Local Imports */
 import { SupabaseService } from '@core';
 
 @Component({
   selector: 'app-admin-page',
   standalone: true,
-  imports: [Card, Button, RouterLink],
+  imports: [RouterLink],
   template: `
     <section class="space-y-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -25,7 +22,7 @@ import { SupabaseService } from '@core';
       </div>
 
       <!-- Access / provisioning -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
@@ -35,13 +32,13 @@ import { SupabaseService } from '@core';
                 <span class="font-semibold">public.profiles</span>.
               </div>
             </div>
-            <ntv-button (click)="checkAccess()" [disabled]="isLoading() || !isBrowser()">
+            <button class="btn-modern btn-secondary" (click)="checkAccess()" [disabled]="isLoading() || !isBrowser()">
               @if (isLoading()) {
                 Checking…
               } @else {
                 Check
               }
-            </ntv-button>
+            </button>
           </div>
 
           @if (!isBrowser()) {
@@ -58,31 +55,30 @@ import { SupabaseService } from '@core';
             }
 
             @if (infoText()) {
-              <div class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                <p class="text-sm font-semibold text-white/80">Result</p>
+              <div class="mt-4 panel-modern">
+              <p class="text-sm font-semibold text-white/80">Result</p>
                 <p class="mt-1 whitespace-pre-wrap text-sm text-white/60">{{ infoText() }}</p>
               </div>
             }
 
-            <div class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-              <p class="text-sm font-semibold text-white/80">Dev provisioning</p>
-              <p class="mt-1 text-sm text-white/60">
-                If you're signed in but not provisioned, add a role row in Supabase Studio:
+            <div class="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+              <p class="text-sm font-semibold text-emerald-200">Local seeded access</p>
+              <p class="mt-1 text-sm text-emerald-100/80">
+                Local reset now seeds provisioned accounts. Use <span class="font-semibold">admin@ntv360.local</span>, <span class="font-semibold">ops@ntv360.local</span>, or <span class="font-semibold">readonly@ntv360.local</span> with password <span class="font-semibold">OpsCore123</span>.
               </p>
-              <pre class="mt-3 overflow-auto rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white/70"><code>insert into public.profiles (user_id, role) values ('&lt;auth.users.id&gt;', 'ADMIN');</code></pre>
             </div>
           }
         </div>
-      </ntv-card>
+      </div>
 
       <!-- Bootstrap import -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="text-sm font-extrabold text-white/80">Bootstrap import</div>
           <p class="mt-1 text-sm text-white/60">
             Open the import workspace to validate legacy installation-tracker source files before backend import is wired.
           </p>
-          <div class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="mt-4 panel-modern">
             <p class="text-sm font-semibold text-white/75">Current status</p>
             <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-white/60">
               <li>Frontend file picker is available</li>
@@ -93,53 +89,47 @@ import { SupabaseService } from '@core';
             <div class="mt-4 flex flex-wrap gap-2">
               <a
                 routerLink="/admin/import"
-                class="inline-flex items-center rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5
-                       text-sm font-semibold text-white/85 transition hover:border-white/20
-                       hover:bg-white/[0.10] hover:text-white"
+                class="btn-modern btn-secondary"
               >
                 Open Bootstrap Import →
               </a>
             </div>
           </div>
         </div>
-      </ntv-card>
+      </div>
 
       <!-- Quick links -->
-      <ntv-card>
+      <div class="card-modern overflow-hidden">
         <div class="p-4 md:p-5">
           <div class="text-sm font-extrabold text-white/80">Quick links</div>
           <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <a
               routerLink="/admin/import"
-              class="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold
-                     text-white/80 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              class="btn-modern btn-secondary justify-start"
             >
               Bootstrap Import →
             </a>
             <a
               routerLink="/installations"
-              class="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold
-                     text-white/80 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              class="btn-modern btn-secondary justify-start"
             >
               Install Queue →
             </a>
             <a
               routerLink="/incidents"
-              class="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold
-                     text-white/80 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              class="btn-modern btn-secondary justify-start"
             >
               Incident Queue →
             </a>
             <a
               routerLink="/players"
-              class="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold
-                     text-white/80 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              class="btn-modern btn-secondary justify-start"
             >
               Players →
             </a>
           </div>
         </div>
-      </ntv-card>
+      </div>
     </section>
   `,
 })
