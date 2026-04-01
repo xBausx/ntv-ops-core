@@ -1,9 +1,7 @@
 /** Angular Imports */
+import { DatePipe, NgClass } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-/** Third Party Imports */
-import { Table } from '@ntv360/component-pantry';
 
 /** Local Imports */
 import { SupabaseService, SwrCacheService } from '@core';
@@ -18,31 +16,36 @@ import {
 @Component({
   selector: 'app-incidents-page',
   standalone: true,
-  imports: [Table, RouterLink],
+  imports: [RouterLink, NgClass, DatePipe],
   template: `
-    <section class="space-y-6">
-      <!-- Header -->
+    <section class="page-shell gap-5">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <h1 class=\"page-title\">Incident Queue</h1>
+          <h1 class="page-title">Incident Queue</h1>
           <p class="mt-1 max-w-3xl text-sm text-white/60">
             Track incidents/support work with strict statuses and audit history.
           </p>
 
-          @if (lastUpdatedLabel()) {
-            <div class="mt-2 inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-white/45">
-              <span>Last updated:</span>
-              <span class="ml-1 text-white/65">{{ lastUpdatedLabel() }}</span>
-              @if (isRevalidating()) {
-                <span class="ml-2 text-white/30">(refreshing…)</span>
-              }
-            </div>
-          }
+          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-white/45">
+            @if (lastUpdatedLabel()) {
+              <span class="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+                Last updated <span class="text-white/65">{{ lastUpdatedLabel() }}</span>
+              </span>
+            }
+            @if (isRevalidating()) {
+              <span class="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-blue-200/80">
+                Refreshing…
+              </span>
+            }
+            <span class="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+              {{ filteredTableRows().length }} visible / {{ rows().length }} loaded
+            </span>
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
           <button
-            class="btn-modern btn-secondary"
+            class="btn-modern btn-primary"
             (click)="openCreate()"
             [disabled]="!isBrowser() || !isWritable()"
           >
@@ -55,185 +58,236 @@ import {
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="card-modern overflow-hidden">
-        <div class="p-4 md:p-5">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div class="min-w-0 flex-1">
-              <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Search</label>
-              <input
-                class="input-modern w-full"
-                placeholder="Search summary, hostname, site, dealer, license UUID…"
-                [value]="searchText()"
-                (input)="onSearchInput($event)"
-              />
-            </div>
+      <div class="card-modern p-4 md:p-5">
+        <div class="grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_180px_150px_auto] xl:items-end">
+          <div class="min-w-0">
+            <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Search</label>
+            <input
+              class="input-modern w-full"
+              placeholder="Search summary, hostname, site, dealer, license UUID…"
+              [value]="searchText()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
 
-            <div class="flex items-center gap-2">
+          <div>
+            <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Status</label>
+            <select class="select-modern w-full" [value]="statusFilter()" (change)="onStatusFilterChange($event)">
+              <option value="ALL">All statuses</option>
+              @for (status of incidentStatuses; track status) {
+                <option [value]="status">{{ status }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-white/50">Priority</label>
+            <select class="select-modern w-full" [value]="priorityFilter()" (change)="onPriorityFilterChange($event)">
+              <option value="ALL">All priorities</option>
+              @for (priority of priorityOptions; track priority) {
+                <option [value]="priority">P{{ priority }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+            <button class="btn-modern btn-secondary" (click)="resetFilters()" [disabled]="activeFilterCount() === 0">
+              Reset filters
+            </button>
+            <button
+              class="btn-modern btn-secondary"
+              (click)="onExport()"
+              [disabled]="filteredTableRows().length === 0"
+            >
+              Export
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-summary-row mt-3">
+          <div class="filter-chip-rail">
+            <span class="table-chip table-chip-compact">
+              Filters <span class="text-white/75">{{ activeFilterCount() }}</span>
+            </span>
+            @for (item of statusPillCounts(); track item.label) {
               <button
                 type="button"
-                aria-label="Clear search"
-                title="Clear search"
-                class="icon-button-modern"
-                (click)="onClear()"
+                class="table-chip table-chip-compact transition hover:border-white/20 hover:text-white"
+                [title]="item.label"
+                [class.border-blue-400/30]="statusFilter() === item.label"
+                [class.bg-blue-500/10]="statusFilter() === item.label"
+                (click)="statusFilter() === item.label ? statusFilter.set('ALL') : statusFilter.set(item.label)"
               >
-                <span class="text-xl leading-none">×</span>
+                {{ item.label }} <span class="text-white/70">{{ item.count }}</span>
               </button>
-
-              <button
-                class="btn-modern btn-secondary"
-                (click)="onExport()"
-                [disabled]="filteredTableRows().length === 0"
-              >
-                Export
-              </button>
-            </div>
+            }
           </div>
         </div>
       </div>
 
-      <!-- Queue -->
-      <div class="card-modern overflow-hidden">
-        <div class="p-4 md:p-5">
-          <div class="flex items-center justify-between gap-4">
-            <div class="text-sm font-bold text-white/70">
-              Queue
-              <span class="ml-2 text-xs font-semibold text-white/40">
-                ({{ filteredTableRows().length }} loaded)
-              </span>
-            </div>
-
-            <div class="text-xs font-semibold text-white/40 text-right">
-              <div>
-                Source: <span class="text-white/60">v_incident_queue</span>
-              </div>
-              @if (userEmail()) {
-                <div class="mt-1">
-                  <span class="text-white/30">User:</span>
-                  <span class="text-white/60 font-semibold">{{ userEmail() }}</span>
-                  @if (userRole()) {
-                    <span class="mx-1 text-white/20">•</span>
-                    <span class="text-white/30">Role:</span>
-                    <span class="text-white/60 font-semibold">{{ userRole() }}</span>
-                  }
-                </div>
-              }
+      <div class="card-modern table-page-card p-4 md:p-5">
+        <div class="table-toolbar-modern">
+          <div>
+            <div class="text-sm font-bold text-white/80">Queue</div>
+            <div class="mt-1 text-xs text-white/45">
+              Source <span class="font-semibold text-white/65">v_incident_queue</span>
             </div>
           </div>
 
-          @if (!isBrowser()) {
-            <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-              <p class="text-sm text-white/70 font-semibold">SSR render</p>
-              <p class="mt-1 text-sm text-white/60">Data loads in the browser only.</p>
-            </div>
-          } @else {
-            @if (authHint()) {
-              <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm text-white/70 font-semibold">Sign-in required</p>
-                <p class="mt-1 text-sm text-white/60">
-                  Go to
-                  <a routerLink="/login" class="font-semibold text-white/80 hover:text-white underline">/login</a>
-                  to authenticate.
-                </p>
-              </div>
-            }
-
-            @if (needsProvisioning()) {
-              <div class="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-                <p class="text-sm font-bold text-amber-200">Account not provisioned</p>
-                <p class="mt-1 text-sm text-amber-100/80">
-                  You’re signed in, but missing a role row in <span class="font-semibold">public.profiles</span>.
-                </p>
-                <pre class="mt-3 text-xs text-white/70 bg-black/40 border border-white/10 rounded-xl p-3 overflow-auto"><code>insert into public.profiles (user_id, role)
-values ('{{ userId() }}', 'ADMIN');</code></pre>
-              </div>
-            }
-
-            @if (errorText()) {
-              <div class="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-                <p class="text-sm font-bold text-red-200">Load failed</p>
-                <p class="mt-1 text-sm text-red-100/80 whitespace-pre-wrap">{{ errorText() }}</p>
-              </div>
-            }
-
-            @if (isLoading() && rows().length === 0) {
-              <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm text-white/70 font-semibold">Loading…</p>
-              </div>
-            } @else if (!authHint() && !needsProvisioning() && filteredTableRows().length === 0) {
-              <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-                <p class="text-sm text-white/70 font-semibold">No results</p>
-                <p class="mt-1 text-sm text-white/60">
-                  Create a work item (New incident) or clear filters.
-                </p>
-              </div>
-            } @else if (filteredTableRows().length > 0) {
-              <div class="mt-4">
-                <div class="table-shell">
-                @if (tableMounted()) {
-                  <ntv-table
-                    [columns]="columns()"
-                    [value]="filteredTableRows()"
-                    [data]="filteredTableRows()"
-                    [filterEnabled]="true"
-                    [hasIndex]="true"
-                    [expandableRows]="true"
-                    dataKey="work_id"
-                    tableHeight="calc(100vh - 360px)"
-                    (showMoreRequested)="onLoadMore()"
-                  >
-                    <ng-template #expandedContent let-row>
-                      <div class="rounded-xl border border-white/10 bg-black/30 p-4">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                          <div class="min-w-0">
-                            <div class="text-xs font-bold text-white/50">Work ID</div>
-                            <div class="text-sm font-semibold text-white/80 break-all">
-                              {{ row.work_id }}
-                            </div>
-
-                            @if (row.license_uuids?.length) {
-                              <div class="mt-2 text-xs text-white/60">
-                                Linked players:
-                                <span class="text-white/80 font-semibold">{{ row.license_uuids.length }}</span>
-                              </div>
-                            }
-                          </div>
-
-                          <div class="flex items-center gap-2">
-                            <a
-                              class="btn-modern btn-secondary"
-                              [routerLink]="['/work', row.work_id]"
-                            >
-                              Open
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    </ng-template>
-                  </ntv-table>
+          <div class="flex flex-wrap items-center justify-end gap-2 text-xs font-semibold text-white/45">
+            @if (userEmail()) {
+              <span class="table-chip">
+                {{ userEmail() }}
+                @if (userRole()) {
+                  <span class="text-white/30">•</span>
+                  <span class="text-white/70">{{ userRole() }}</span>
                 }
-                </div>
-
-                @if (!hasMore() && rows().length > 0) {
-                  <div class="mt-3 text-xs font-semibold text-white/40">
-                    All rows loaded.
-                  </div>
-                }
-              </div>
+              </span>
             }
-          }
+            <span class="table-chip">Loaded {{ rows().length }}</span>
+            @if (hasMore()) {
+              <span class="table-chip">More available</span>
+            } @else if (rows().length > 0) {
+              <span class="table-chip">Complete</span>
+            }
+          </div>
         </div>
+
+        @if (!isBrowser()) {
+          <div class="panel-modern mt-4">
+            <p class="text-sm font-semibold text-white/75">SSR render</p>
+            <p class="mt-1 text-sm text-white/60">Data loads in the browser only.</p>
+          </div>
+        } @else {
+          @if (authHint()) {
+            <div class="panel-modern mt-4">
+              <p class="text-sm font-semibold text-white/75">Sign-in required</p>
+              <p class="mt-1 text-sm text-white/60">
+                Go to
+                <a routerLink="/login" class="font-semibold text-white/85 underline hover:text-white">/login</a>
+                to authenticate.
+              </p>
+            </div>
+          }
+
+          @if (needsProvisioning()) {
+            <div class="panel-modern mt-4">
+              <p class="text-sm font-semibold text-white/75">Role configuration issue</p>
+              <p class="mt-1 text-sm text-white/60">
+                Your account is signed in but does not have a matching role in
+                <span class="font-semibold text-white/80">public.profiles</span>.
+              </p>
+            </div>
+          }
+
+          @if (errorText()) {
+            <div class="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+              <p class="text-sm font-bold text-red-200">Load failed</p>
+              <p class="mt-1 whitespace-pre-wrap text-sm text-red-100/80">{{ errorText() }}</p>
+            </div>
+          }
+
+          @if (isLoading() && rows().length === 0) {
+            <div class="panel-modern mt-4">
+              <p class="text-sm font-semibold text-white/75">Loading…</p>
+            </div>
+          } @else if (!authHint() && !needsProvisioning() && filteredTableRows().length === 0) {
+            <div class="panel-modern mt-4">
+              <p class="text-sm font-semibold text-white/75">No results</p>
+              <p class="mt-1 text-sm text-white/60">Create a work item, widen the filters, or clear the search.</p>
+            </div>
+          } @else if (filteredTableRows().length > 0) {
+            <div class="table-region mt-4">
+              <div class="table-scroll-region incident-queue-table-wrap">
+                <table class="table-modern table-dense incident-queue-table w-full">
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Summary</th>
+                      <th>Site</th>
+                      <th>Dealer</th>
+                      <th>Scheduled</th>
+                      <th>Priority</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @for (item of filteredTableRows(); track item.work_id) {
+                      <tr class="cursor-pointer">
+                        <td>
+                          <span
+                            class="status-badge"
+                            [ngClass]="{
+                              'status-new': item.status === 'NEW',
+                              'status-in-progress': item.status === 'IN_PROGRESS' || item.status === 'SCHEDULED',
+                              'status-blocked': item.status === 'BLOCKED',
+                              'status-verified': item.status === 'VERIFIED' || item.status === 'CLOSED'
+                            }"
+                          >
+                            {{ item.status }}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div class="col-primary incident-cell-primary" [title]="item.summary">
+                            {{ item.summary }}
+                          </div>
+                          <div class="col-secondary incident-cell-secondary" [title]="item.hostnames_display">
+                            {{ item.hostnames_display }}
+                          </div>
+                        </td>
+
+                        <td class="col-secondary">
+                          <span class="incident-cell-secondary" [title]="item.site_display">{{ item.site_display }}</span>
+                        </td>
+
+                        <td class="col-muted">
+                          <span class="incident-cell-muted" [title]="item.dealer_display">{{ item.dealer_display }}</span>
+                        </td>
+
+                        <td class="col-secondary">
+                          <span class="incident-cell-secondary">{{ item.scheduled_for | date:'MMM d, HH:mm' }}</span>
+                        </td>
+
+                        <td>
+                          <span
+                            [ngClass]="{
+                              'priority-high': item.priority === 1,
+                              'priority-medium': item.priority === 2,
+                              'priority-low': item.priority >= 3
+                            }"
+                          >
+                            P{{ item.priority }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="table-footer-region">
+              @if (hasMore()) {
+                <button class="btn-modern btn-secondary" (click)="onLoadMore()" [disabled]="isLoading()">
+                  Load more
+                </button>
+              } @else if (rows().length > 0) {
+                <div class="text-xs font-semibold text-white/40">All rows loaded.</div>
+              }
+            </div>
+          }
+        }
       </div>
     </section>
 
-    <!-- Create modal -->
     @if (isCreateOpen()) {
       <div class="fixed inset-0 z-50">
         <div class="absolute inset-0 bg-black/70" (click)="closeCreate()"></div>
 
         <div class="absolute inset-0 flex items-center justify-center p-4">
-          <div class="card-modern w-full max-w-xl bg-neutral-950 shadow-2xl">
-            <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+          <div class="w-full max-w-xl rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">
               <div>
                 <div class="text-lg font-extrabold tracking-tight">New incident</div>
                 <div class="mt-1 text-sm text-white/60">
@@ -241,24 +295,19 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 </div>
               </div>
 
-              <button
-                class="btn-modern btn-secondary"
-                (click)="closeCreate()"
-              >
-                Close
-              </button>
+              <button class="btn-modern btn-secondary" (click)="closeCreate()">Close</button>
             </div>
 
-            <div class="p-5 space-y-4">
+            <div class="space-y-4 p-5">
               @if (createError()) {
                 <div class="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
                   <div class="text-sm font-bold text-red-200">Create failed</div>
-                  <div class="mt-1 text-sm text-red-100/80 whitespace-pre-wrap">{{ createError() }}</div>
+                  <div class="mt-1 whitespace-pre-wrap text-sm text-red-100/80">{{ createError() }}</div>
                 </div>
               }
 
               <div>
-                <label class="block text-xs font-bold text-white/60 mb-1">Summary *</label>
+                <label class="mb-1 block text-xs font-bold text-white/60">Summary *</label>
                 <input
                   class="input-modern w-full"
                   placeholder="e.g. Player offline at Site XYZ"
@@ -267,14 +316,10 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 />
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1">Priority</label>
-                  <select
-                    class="input-modern w-full"
-                    [value]="createPriority()"
-                    (change)="onCreatePriority($event)"
-                  >
+                  <label class="mb-1 block text-xs font-bold text-white/60">Priority</label>
+                  <select class="select-modern w-full" [value]="createPriority()" (change)="onCreatePriority($event)">
                     <option [value]="1">1 (Highest)</option>
                     <option [value]="2">2</option>
                     <option [value]="3">3 (Default)</option>
@@ -284,12 +329,8 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 </div>
 
                 <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1">Status</label>
-                  <select
-                    class="input-modern w-full"
-                    [value]="createStatus()"
-                    (change)="onCreateStatus($event)"
-                  >
+                  <label class="mb-1 block text-xs font-bold text-white/60">Status</label>
+                  <select class="select-modern w-full" [value]="createStatus()" (change)="onCreateStatus($event)">
                     @for (s of createStatuses(); track s) {
                       <option [value]="s">{{ s }}</option>
                     }
@@ -297,7 +338,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                 </div>
 
                 <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1">Scheduled for</label>
+                  <label class="mb-1 block text-xs font-bold text-white/60">Scheduled for</label>
                   <input
                     type="datetime-local"
                     class="input-modern w-full"
@@ -308,9 +349,9 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-white/60 mb-1">Description</label>
+                <label class="mb-1 block text-xs font-bold text-white/60">Description</label>
                 <textarea
-                  class="input-modern min-h-[96px] w-full resize-y"
+                  class="input-modern min-h-[96px] w-full"
                   placeholder="Optional details…"
                   [value]="createDescription()"
                   (input)="onCreateDescription($event)"
@@ -318,9 +359,9 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               </div>
 
               @if (createStatus() === 'BLOCKED') {
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div>
-                    <label class="block text-xs font-bold text-white/60 mb-1">Blocked reason code</label>
+                    <label class="mb-1 block text-xs font-bold text-white/60">Blocked reason code</label>
                     <input
                       class="input-modern w-full"
                       placeholder="e.g. WAITING_ON_VENDOR"
@@ -330,7 +371,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
                   </div>
 
                   <div>
-                    <label class="block text-xs font-bold text-white/60 mb-1">Blocked details</label>
+                    <label class="mb-1 block text-xs font-bold text-white/60">Blocked details</label>
                     <input
                       class="input-modern w-full"
                       placeholder="Explain what’s blocking…"
@@ -342,11 +383,7 @@ values ('{{ userId() }}', 'ADMIN');</code></pre>
               }
 
               <div class="flex items-center justify-end gap-2 pt-2">
-                <button
-                  class="btn-modern btn-secondary disabled:opacity-50"
-                  (click)="resetCreate()"
-                  [disabled]="isCreating()"
-                >
+                <button class="btn-modern btn-secondary" (click)="resetCreate()" [disabled]="isCreating()">
                   Reset
                 </button>
 
@@ -377,17 +414,17 @@ export class IncidentsPageComponent {
 
   private readonly cacheKey = 'queue:incidents:v1';
   private readonly ttlMs = 30_000;
+  private readonly pageSize = 100;
 
   readonly isBrowser = signal<boolean>(this.supabase.isBrowser());
+  readonly incidentStatuses = [...INCIDENT_WORK_STATUSES];
+  readonly priorityOptions = [1, 2, 3, 4, 5];
 
   readonly searchText = signal<string>('');
-
-  // remount toggle to reset Pantry table internal filters
-  readonly tableMounted = signal<boolean>(true);
-
+  readonly statusFilter = signal<string>('ALL');
+  readonly priorityFilter = signal<string>('ALL');
   readonly isLoading = signal<boolean>(false);
   readonly isRevalidating = signal<boolean>(false);
-
   readonly errorText = signal<string>('');
 
   readonly authHint = signal<boolean>(false);
@@ -397,16 +434,13 @@ export class IncidentsPageComponent {
   readonly userId = signal<string>('');
   readonly userRole = signal<string>('');
 
-  readonly isWritable = computed(() => this.userRole() === 'ADMIN' || this.userRole() === 'OPS');
+  readonly isWritable = computed<boolean>(() => this.userRole() === 'ADMIN' || this.userRole() === 'OPS');
 
-  // Pagination
-  private readonly pageSize = 100;
   readonly currentPage = signal<number>(1);
   readonly hasMore = signal<boolean>(true);
-
   readonly rows = signal<IncidentQueueRow[]>([]);
 
-  readonly lastUpdatedLabel = computed(() => {
+  readonly lastUpdatedLabel = computed<string>(() => {
     const ts = this.swr.fetchedAt(this.cacheKey);
     if (!ts) return '';
     return new Date(ts).toLocaleString();
@@ -421,29 +455,38 @@ export class IncidentsPageComponent {
     })),
   );
 
-  readonly filteredTableRows = computed(() => {
+  readonly filteredTableRows = computed<IncidentQueueTableRow[]>(() => {
     const q = this.searchText().trim().toLowerCase();
-    const all = this.tableRows();
-    if (!q) return all;
-    return all.filter((r) => this.matches(r, q));
+    const status = this.statusFilter();
+    const priority = this.priorityFilter();
+
+    return this.tableRows().filter((row) => {
+      if (status !== 'ALL' && row.status !== status) return false;
+      if (priority !== 'ALL' && String(row.priority) !== priority) return false;
+      if (q && !this.matches(row, q)) return false;
+      return true;
+    });
   });
+
+  readonly activeFilterCount = computed<number>(() => {
+    let count = 0;
+    if (this.searchText().trim()) count += 1;
+    if (this.statusFilter() !== 'ALL') count += 1;
+    if (this.priorityFilter() !== 'ALL') count += 1;
+    return count;
+  });
+
+  readonly statusPillCounts = computed<{ label: string; count: number }[]>(() =>
+    this.incidentStatuses
+      .map((label) => ({
+        label,
+        count: this.tableRows().filter((row) => row.status === label).length,
+      }))
+      .filter((item) => item.count > 0),
+  );
 
   readonly createStatuses = signal<string[]>([...CLIENT_CREATABLE_INCIDENT_STATUSES]);
 
-  readonly columns = signal<any[]>([
-    { field: 'status', header: 'Status', visible: true, width: '140px', filter: true, type: 'select', options: [...INCIDENT_WORK_STATUSES] },
-    { field: 'priority', header: 'P', visible: true, width: '70px', filter: true, type: 'number' },
-    { field: 'summary', header: 'Summary', visible: true, filter: true, filterType: 'text' },
-    { field: 'hostnames_display', header: 'Hostnames', visible: true, width: '260px', filter: true, filterType: 'text' },
-    { field: 'site_display', header: 'Site', visible: true, width: '180px', filter: true, filterType: 'text' },
-    { field: 'dealer_display', header: 'Dealer', visible: true, width: '180px', filter: true, filterType: 'text' },
-    { field: 'player_count', header: '#', visible: true, width: '80px', type: 'number' },
-    { field: 'sla_due', header: 'SLA Due', visible: true, width: '190px', filter: true, filterType: 'text' },
-    { field: 'updated_at', header: 'Updated', visible: true, width: '210px', filter: true, filterType: 'text' },
-    { field: 'work_id', header: 'Work ID', visible: false, width: '280px' },
-  ]);
-
-  // Create modal state
   readonly isCreateOpen = signal<boolean>(false);
   readonly isCreating = signal<boolean>(false);
   readonly createError = signal<string>('');
@@ -452,8 +495,7 @@ export class IncidentsPageComponent {
   readonly createDescription = signal<string>('');
   readonly createPriority = signal<number>(3);
   readonly createStatus = signal<string>('NEW');
-  readonly createScheduledFor = signal<string>(''); // datetime-local
-
+  readonly createScheduledFor = signal<string>('');
   readonly createBlockedCode = signal<string>('');
   readonly createBlockedDetail = signal<string>('');
 
@@ -493,9 +535,20 @@ export class IncidentsPageComponent {
     this.searchText.set(input?.value ?? '');
   }
 
-  onClear(): void {
+  onStatusFilterChange(event: Event): void {
+    const select = event.target as HTMLSelectElement | null;
+    this.statusFilter.set(select?.value ?? 'ALL');
+  }
+
+  onPriorityFilterChange(event: Event): void {
+    const select = event.target as HTMLSelectElement | null;
+    this.priorityFilter.set(select?.value ?? 'ALL');
+  }
+
+  resetFilters(): void {
     this.searchText.set('');
-    this.remountTable();
+    this.statusFilter.set('ALL');
+    this.priorityFilter.set('ALL');
   }
 
   async refreshHard(): Promise<void> {
@@ -511,8 +564,11 @@ export class IncidentsPageComponent {
     if (!this.supabase.isBrowser()) return;
 
     const blocking = this.rows().length === 0 || append;
-    if (blocking) this.isLoading.set(true);
-    else this.isRevalidating.set(true);
+    if (blocking) {
+      this.isLoading.set(true);
+    } else {
+      this.isRevalidating.set(true);
+    }
 
     try {
       const nextPage = append ? this.currentPage() + 1 : 1;
@@ -533,16 +589,15 @@ export class IncidentsPageComponent {
           };
         }
 
-        // refresh: re-fetch same number of pages already loaded (prevents “jump/flash”)
-        const targetPages = Math.max(1, Math.min(pagesToReload, 10)); // safety cap
+        const targetPages = Math.max(1, Math.min(pagesToReload, 10));
         let merged: IncidentQueueRow[] = [];
-        let hasMore = true;
+        let moreAvailable = true;
         let loadedPages = 0;
 
-        for (let p = 1; p <= targetPages; p++) {
+        for (let p = 1; p <= targetPages; p += 1) {
           const fetched = await this.fetchPage(p);
           merged = [...merged, ...fetched.batch];
-          hasMore = fetched.hasMore;
+          moreAvailable = fetched.hasMore;
           loadedPages = p;
           if (!fetched.hasMore) break;
         }
@@ -550,7 +605,7 @@ export class IncidentsPageComponent {
         return {
           rows: merged,
           currentPage: loadedPages,
-          hasMore,
+          hasMore: moreAvailable,
           userEmail: this.userEmail(),
           userId: this.userId(),
           userRole: this.userRole(),
@@ -570,8 +625,11 @@ export class IncidentsPageComponent {
     } catch (e) {
       this.errorText.set(String(e));
     } finally {
-      if (blocking) this.isLoading.set(false);
-      else this.isRevalidating.set(false);
+      if (blocking) {
+        this.isLoading.set(false);
+      } else {
+        this.isRevalidating.set(false);
+      }
     }
   }
 
@@ -601,7 +659,9 @@ export class IncidentsPageComponent {
     this.userId.set(session.user.id);
 
     const { data: profile, error: profileError } = await client.from('profiles').select('role').maybeSingle();
-    if (profileError) this.errorText.set(profileError.message);
+    if (profileError) {
+      this.errorText.set(profileError.message);
+    }
 
     const role = profile?.role ?? '';
     this.userRole.set(role);
@@ -655,7 +715,6 @@ export class IncidentsPageComponent {
     return { batch, hasMore: batch.length === this.pageSize };
   }
 
-  // Create modal handlers
   openCreate(): void {
     this.createError.set('');
     this.isCreateOpen.set(true);
@@ -726,7 +785,6 @@ export class IncidentsPageComponent {
 
     try {
       const client = this.supabase.client();
-
       const status = this.createStatus();
 
       if (status === 'VERIFIED' || status === 'CLOSED') {
@@ -738,10 +796,18 @@ export class IncidentsPageComponent {
 
       const scheduledLocal = this.createScheduledFor().trim();
       const scheduledForIso = scheduledLocal ? new Date(scheduledLocal).toISOString() : null;
-
       const isBlocked = status === 'BLOCKED';
 
-      const payload: any = {
+      const payload: {
+        type: 'INCIDENT';
+        status: string;
+        priority: number;
+        summary: string;
+        description: string | null;
+        scheduled_for: string | null;
+        blocked_reason_code: string | null;
+        blocked_reason_detail: string | null;
+      } = {
         type: 'INCIDENT',
         status,
         priority: this.createPriority(),
@@ -760,10 +826,8 @@ export class IncidentsPageComponent {
       }
 
       this.swr.invalidate(this.cacheKey);
-
       this.isCreateOpen.set(false);
       this.resetCreate();
-
       await this.initLoad();
     } catch (e) {
       this.createError.set(String(e));
@@ -774,13 +838,6 @@ export class IncidentsPageComponent {
 
   onExport(): void {
     console.log('Export requested', this.filteredTableRows().length);
-  }
-
-  private remountTable(): void {
-    this.tableMounted.set(false);
-    const fn = () => this.tableMounted.set(true);
-    if (typeof queueMicrotask === 'function') queueMicrotask(fn);
-    else setTimeout(fn, 0);
   }
 
   private matches(row: IncidentQueueTableRow, q: string): boolean {
@@ -796,6 +853,6 @@ export class IncidentsPageComponent {
       ...(row.license_uuids ?? []),
     ];
 
-    return haystack.some((v) => (v ?? '').toLowerCase().includes(q));
+    return haystack.some((value) => value.toLowerCase().includes(q));
   }
 }

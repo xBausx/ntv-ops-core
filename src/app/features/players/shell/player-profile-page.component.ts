@@ -1,9 +1,7 @@
 /** Angular Imports */
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-
-/** Third Party Imports */
-import { Card } from '@ntv360/component-pantry';
+import { NgClass } from '@angular/common';
 
 /** Local Imports */
 import { SupabaseService } from '@core';
@@ -22,7 +20,7 @@ type LinkedWorkItem = {
 @Component({
   selector: 'app-player-profile-page',
   standalone: true,
-  imports: [Card, RouterLink],
+  imports: [RouterLink, NgClass],
   template: `
     <section class="space-y-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -40,15 +38,15 @@ type LinkedWorkItem = {
       </div>
 
       @if (!isBrowser()) {
-        <ntv-card>
+        <div class="card-modern">
           <div class="p-4 md:p-5">
             <p class="text-sm font-semibold text-white/75">SSR render</p>
             <p class="mt-1 text-sm text-white/60">Player data loads in the browser only.</p>
           </div>
-        </ntv-card>
+        </div>
       } @else {
         @if (authHint()) {
-          <ntv-card>
+          <div class="card-modern">
             <div class="p-4 md:p-5">
               <p class="text-sm font-semibold text-white/75">Sign-in required</p>
               <p class="mt-1 text-sm text-white/60">
@@ -57,38 +55,38 @@ type LinkedWorkItem = {
                 to authenticate.
               </p>
             </div>
-          </ntv-card>
+          </div>
         }
 
         @if (needsProvisioning()) {
-          <ntv-card>
+          <div class="card-modern">
             <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 md:p-5">
               <p class="text-sm font-bold text-amber-200">Account not provisioned</p>
               <p class="mt-1 text-sm text-amber-100/80">
                 You’re signed in, but missing a role row in <span class="font-semibold">public.profiles</span>.
               </p>
             </div>
-          </ntv-card>
+          </div>
         }
 
         @if (errorText()) {
-          <ntv-card>
+          <div class="card-modern">
             <div class="rounded-xl border border-red-500/20 bg-red-500/10 p-4 md:p-5">
               <p class="text-sm font-bold text-red-200">Load failed</p>
               <p class="mt-1 whitespace-pre-wrap text-sm text-red-100/80">{{ errorText() }}</p>
             </div>
-          </ntv-card>
+          </div>
         }
 
         @if (isLoading()) {
-          <ntv-card>
+          <div class="card-modern">
             <div class="p-4 md:p-5">
               <p class="text-sm font-semibold text-white/75">Loading player…</p>
             </div>
-          </ntv-card>
+          </div>
         } @else if (player()) {
           <div class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
-            <ntv-card>
+            <div class="card-modern">
               <div class="p-4 md:p-5">
                 <div class="flex items-center justify-between gap-3">
                   <div>
@@ -145,13 +143,13 @@ type LinkedWorkItem = {
                   </div>
                 </dl>
               </div>
-            </ntv-card>
+            </div>
 
-            <ntv-card>
+            <div class="card-modern">
               <div class="p-4 md:p-5">
                 <div class="text-sm font-extrabold text-white/80">Deep links</div>
                 <p class="mt-1 text-sm text-white/60">
-                  Direct links to the current external operational tools.
+                  Direct links to external operational tools.
                 </p>
 
                 <div class="mt-4 flex flex-col gap-3">
@@ -188,17 +186,16 @@ type LinkedWorkItem = {
                   }
                 </div>
               </div>
-            </ntv-card>
+            </div>
           </div>
 
-          <ntv-card>
+          <div class="card-modern">
             <div class="p-4 md:p-5">
               <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div class="text-sm font-extrabold text-white/80">Associated work</div>
                   <p class="mt-1 text-sm text-white/60">
-                    Open and historical work currently linked through
-                    <span class="font-semibold">work_item_players</span>.
+                    Work linked through <span class="font-semibold">work_item_players</span>.
                   </p>
                 </div>
 
@@ -212,36 +209,67 @@ type LinkedWorkItem = {
                   <p class="text-sm font-semibold text-white/75">No linked work found</p>
                 </div>
               } @else {
-                <div class="mt-4 overflow-x-auto">
-                  <table class="min-w-full text-sm">
-                    <thead class="text-left text-white/40">
-                      <tr class="border-b border-white/10">
-                        <th class="py-3 pr-4 font-semibold">Work ID</th>
-                        <th class="py-3 pr-4 font-semibold">Type</th>
-                        <th class="py-3 pr-4 font-semibold">Status</th>
-                        <th class="py-3 pr-4 font-semibold">Priority</th>
-                        <th class="py-3 pr-4 font-semibold">Summary</th>
-                        <th class="py-3 pr-4 font-semibold">Scheduled</th>
-                        <th class="py-3 pr-0 text-right font-semibold">Action</th>
+                <div class="table-scroll-region mt-4 overflow-x-auto">
+                  <table class="table-modern table-dense w-full">
+                    <thead>
+                      <tr>
+                        <th>Work</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Summary</th>
+                        <th>Scheduled</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (item of linkedWorkItems(); track item.work_id) {
-                        <tr class="border-b border-white/5">
-                          <td class="py-3 pr-4 font-mono text-xs text-white/80">{{ item.work_id }}</td>
-                          <td class="py-3 pr-4 text-white/70">{{ item.type }}</td>
-                          <td class="py-3 pr-4 text-white/70">{{ item.status }}</td>
-                          <td class="py-3 pr-4 text-white/70">{{ item.priority }}</td>
-                          <td class="py-3 pr-4 text-white/80">{{ item.summary }}</td>
-                          <td class="py-3 pr-4 text-white/70">
+                        <tr class="cursor-pointer">
+                          <td class="col-muted text-truncate">
+                            {{ item.work_id }}
+                          </td>
+                          <td class="col-secondary">{{ item.type }}</td>
+
+                          <td>
+                            <span
+                              class="status-badge"
+                              [ngClass]="{
+                                'status-new': item.status === 'NEW',
+                                'status-in-progress': item.status === 'IN_PROGRESS' || item.status === 'SCHEDULED',
+                                'status-blocked': item.status === 'BLOCKED',
+                                'status-verified': item.status === 'VERIFIED' || item.status === 'CLOSED'
+                              }"
+                            >
+                              {{ item.status }}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span
+                              [ngClass]="{
+                                'priority-high': item.priority === 1,
+                                'priority-medium': item.priority === 2,
+                                'priority-low': item.priority >= 3
+                              }"
+                            >
+                              P{{ item.priority }}
+                            </span>
+                          </td>
+
+                          <td class="col-primary">
+                            {{ item.summary }}
+                          </td>
+
+                          <td class="col-secondary">
                             {{ item.scheduled_for ? formatDate(item.scheduled_for) : '—' }}
                           </td>
-                          <td class="py-3 pr-0 text-right">
+
+                          <td class="text-right">
                             <a
                               [routerLink]="['/work', item.work_id]"
-                              class="text-sm font-semibold text-white/70 underline hover:text-white"
+                              class="btn-modern btn-secondary"
                             >
-                              Open →
+                              Open
                             </a>
                           </td>
                         </tr>
@@ -251,16 +279,16 @@ type LinkedWorkItem = {
                 </div>
               }
             </div>
-          </ntv-card>
+          </div>
         } @else {
-          <ntv-card>
+          <div class="card-modern">
             <div class="p-4 md:p-5">
               <p class="text-sm font-semibold text-white/75">Player not found</p>
               <p class="mt-1 text-sm text-white/60">
                 The requested player mapping could not be found.
               </p>
             </div>
-          </ntv-card>
+          </div>
         }
       }
     </section>
@@ -293,9 +321,7 @@ export class PlayerProfilePageComponent {
   });
 
   constructor() {
-    if (!this.supabase.isBrowser()) {
-      return;
-    }
+    if (!this.supabase.isBrowser()) return;
 
     const licenseUuid = this.route.snapshot.paramMap.get('license_uuid') ?? '';
     this.licenseUuid.set(licenseUuid);
@@ -328,9 +354,7 @@ export class PlayerProfilePageComponent {
 
       const { data: profile, error: profileError } = await client.from('profiles').select('role').maybeSingle();
 
-      if (profileError) {
-        this.errorText.set(profileError.message);
-      }
+      if (profileError) this.errorText.set(profileError.message);
 
       const role = profile?.role ?? '';
       if (!role) {

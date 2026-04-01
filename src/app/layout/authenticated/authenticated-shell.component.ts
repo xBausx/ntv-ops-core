@@ -15,9 +15,9 @@ type NavItem = {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="flex min-h-screen bg-neutral-950 text-white">
+    <div class="flex h-screen overflow-hidden bg-neutral-950 text-white">
       <!-- Left nav -->
-      <aside class="flex w-72 shrink-0 flex-col border-r border-white/10 bg-black/60 backdrop-blur-xl">
+      <aside class="app-shell-sidebar flex w-72 shrink-0 flex-col border-r border-white/10 bg-black/60 backdrop-blur-xl">
         <!-- Header -->
         <div class="relative flex h-16 items-center border-b border-white/10 px-6">
           <div class="flex items-center gap-3">
@@ -108,8 +108,8 @@ type NavItem = {
       </aside>
 
       <!-- Main content -->
-      <main class="min-w-0 flex-1">
-        <div [class]="containerClass()">
+      <main class="app-shell-main">
+        <div class="app-shell-content" [class]="containerClass()">
           <router-outlet />
         </div>
       </main>
@@ -133,8 +133,8 @@ export class AuthenticatedShellComponent {
 
   readonly containerClass = computed(() =>
     this.isWide()
-      ? 'max-w-none mx-auto px-6 xl:px-10 py-6'
-      : 'max-w-[1440px] mx-auto px-8 py-6',
+      ? 'max-w-none mx-auto h-full px-6 py-6 xl:px-10'
+      : 'max-w-[1440px] mx-auto h-full px-8 py-6',
   );
 
   readonly isSigningOut = signal<boolean>(false);
@@ -161,7 +161,8 @@ export class AuthenticatedShellComponent {
       url.startsWith('/installations') ||
       url.startsWith('/incidents') ||
       url.startsWith('/players') ||
-      url.startsWith('/dashboard')
+      url.startsWith('/dashboard') ||
+      url.startsWith('/admin')
     );
   }
 
